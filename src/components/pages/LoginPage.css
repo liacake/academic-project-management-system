@@ -1,0 +1,46 @@
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+  background: var(--bg);
+}
+
+.login-card {
+  width: 100%;
+  max-width: 380px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 2rem 1.75rem;
+}
+
+.login-brand { display: flex; flex-direction: column; align-items: center; margin-bottom: 1.75rem; }
+.login-logo { width: 40px; height: 40px; background: var(--accent); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.1rem; color: #fff; margin-bottom: 0.6rem; }
+.login-title { font-weight: 700; font-size: 1rem; color: var(--text); margin: 0 0 0.2rem; }
+.login-subtitle { font-size: 0.72rem; color: var(--text-muted); margin: 0; text-align: center; }
+
+.login-heading { font-size: 1.1rem; font-weight: 700; margin: 0 0 0.2rem; }
+.login-desc { font-size: 0.85rem; color: var(--text-muted); margin: 0 0 1.25rem; }
+
+.login-form { display: flex; flex-direction: column; gap: 0.875rem; }
+
+.login-error { background: #fef2f2; border: 1px solid #fecaca; color: var(--danger); padding: 0.55rem 0.75rem; border-radius: 6px; font-size: 0.82rem; }
+@media (prefers-color-scheme: dark) { .login-error { background: #2d1117; border-color: #6e2a2a; } }
+
+.login-btn { background: var(--accent); color: #fff; border: none; border-radius: 6px; padding: 0.6rem; font-size: 0.9rem; font-weight: 500; cursor: pointer; font-family: var(--font); transition: opacity 0.1s; }
+.login-btn:hover:not(:disabled) { opacity: 0.85; }
+.login-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.login-demo { margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--border); }
+.demo-label { font-size: 0.72rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 0.6rem; }
+
+.demo-accounts { display: flex; flex-direction: column; gap: 0.3rem; }
+.demo-account { display: flex; align-items: center; gap: 0.5rem; padding: 0.45rem 0.6rem; background: none; border: 1px solid var(--border); border-radius: 6px; cursor: pointer; transition: border-color 0.1s; text-align: left; width: 100%; }
+.demo-account:hover { border-color: var(--accent); }
+
+.demo-avatar { width: 24px; height: 24px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 0.65rem; font-weight: 600; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.demo-info { display: flex; flex-direction: column; line-height: 1.2; }
+.demo-name { font-size: 0.8rem; font-weight: 500; color: var(--text); }
+.demo-role { font-size: 0.68rem; color: var(--text-muted); text-transform: capitalize; }

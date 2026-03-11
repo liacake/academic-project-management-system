@@ -1,0 +1,27 @@
+.team-page { display: flex; flex-direction: column; gap: 1.25rem; }
+
+.team-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 0.75rem; }
+
+.team-card { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 1.1rem; display: flex; flex-direction: column; gap: 0.875rem; transition: border-color 0.1s; }
+.team-card:hover { border-color: var(--accent); }
+
+.team-card-top { display: flex; align-items: center; gap: 0.65rem; flex-wrap: wrap; }
+.team-avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 0.9rem; font-weight: 600; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.team-info { flex: 1; min-width: 0; }
+.team-name { font-size: 0.9rem; font-weight: 600; margin: 0 0 0.1rem; }
+.team-email { font-size: 0.75rem; color: var(--text-muted); margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.team-student-id { display: flex; justify-content: space-between; align-items: center; padding: 0.35rem 0.6rem; background: var(--surface); border: 1px solid var(--border); border-radius: 5px; }
+.team-label { font-size: 0.7rem; color: var(--text-muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.04em; }
+.team-value { font-size: 0.8rem; font-weight: 500; }
+.mono { font-family: monospace; }
+
+.team-projects-section { display: flex; flex-direction: column; gap: 0.4rem; }
+.team-projects-list { display: flex; flex-direction: column; gap: 0.3rem; }
+.team-project-chip { display: flex; align-items: center; gap: 0.4rem; padding: 0.3rem 0.5rem; background: var(--surface); border: 1px solid var(--border); border-radius: 5px; font-size: 0.8rem; color: var(--text-muted); }
+.team-project-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.dot--active { background: var(--success); }
+.dot--planning { background: var(--warning); }
+.dot--completed { background: var(--accent); }
+.dot--archived { background: var(--text-muted); }
+.team-no-projects { font-size: 0.8rem; color: var(--text-muted); font-style: italic; }

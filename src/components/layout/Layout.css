@@ -1,0 +1,9 @@
+.layout { min-height: 100vh; display: flex; flex-direction: column; }
+.layout-main { flex: 1; }
+.layout-content {
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 2rem 1.25rem;
+}
+@media (max-width: 768px) { .layout-content { padding: 1.25rem 1rem; } }

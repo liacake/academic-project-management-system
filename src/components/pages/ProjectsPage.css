@@ -1,0 +1,20 @@
+.projects-page { display: flex; flex-direction: column; gap: 1.25rem; }
+
+.projects-toolbar { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
+
+.search-wrapper { position: relative; flex: 1; min-width: 180px; }
+.search-icon { position: absolute; left: 0.65rem; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 1rem; pointer-events: none; }
+.search-input { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 0.45rem 2rem 0.45rem 2rem; color: var(--text); font-size: 0.85rem; font-family: var(--font); outline: none; box-sizing: border-box; transition: border-color 0.1s; }
+.search-input:focus { border-color: var(--accent); }
+.search-input::placeholder { color: var(--text-muted); }
+.search-clear { position: absolute; right: 0.65rem; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 0.75rem; padding: 2px; line-height: 1; }
+
+.toolbar-filters { display: flex; gap: 0.4rem; }
+
+.projects-grid-full { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 0.75rem; }
+
+.filter-icon { color: var(--text-muted); flex-shrink: 0; }
+.toolbar-filters { display: flex; align-items: center; gap: 0.4rem; }
+
+/* project-link icon alignment */
+.project-link { display: inline-flex; align-items: center; gap: 0.25rem; }

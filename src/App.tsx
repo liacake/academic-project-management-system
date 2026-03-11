@@ -1,0 +1,53 @@
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import { ProjectProvider } from './context/ProjectContext';
+import { TechnologyProvider } from './context/TechnologyContext';
+import { TeamProvider } from './context/TeamContext';
+import Layout from './components/layout/Layout';
+import LoginPage from './components/pages/LoginPage';
+import DashboardPage from './components/pages/DashboardPage';
+import ProjectsPage from './components/pages/ProjectsPage';
+import ProjectDetailPage from './components/pages/ProjectDetailPage';
+import KanbanPage from './components/pages/KanbanPage';
+import TeamPage from './components/pages/TeamPage';
+import './App.css';
+
+const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { isAuthenticated } = useAuth();
+  return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />;
+};
+
+const AppRoutes: React.FC = () => {
+  const { isAuthenticated } = useAuth();
+  return (
+    <Routes>
+      <Route path="/login" element={isAuthenticated ? <Navigate to="/" replace /> : <LoginPage />} />
+      <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+        <Route path="/" element={<DashboardPage />} />
+        <Route path="/projects" element={<ProjectsPage />} />
+        <Route path="/projects/:id" element={<ProjectDetailPage />} />
+        <Route path="/kanban" element={<KanbanPage />} />
+        <Route path="/team" element={<TeamPage />} />
+      </Route>
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
+};
+
+function App() {
+  return (
+    <BrowserRouter>
+      <AuthProvider>
+        <ProjectProvider>
+          <TechnologyProvider>
+            <TeamProvider>
+              <AppRoutes />
+            </TeamProvider>
+          </TechnologyProvider>
+        </ProjectProvider>
+      </AuthProvider>
+    </BrowserRouter>
+  );
+}
+
+export default App;

@@ -1,8 +1,11 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ChevronLeft, Kanban, Github, ExternalLink, Check } from 'lucide-react';
+import { ChevronLeft, Kanban, Github, ExternalLink, Check, UserPlus, Crown, X } from 'lucide-react';
 import { useProjects } from '../../context/ProjectContext';
+import { useAuth } from '../../context/AuthContext';
+import { useInvites } from '../../context/InviteContext';
 import Badge from '../ui/Badge';
+import UserSearch from '../ui/UserSearch';
 import strings from '../ui/strings';
 import './ProjectDetailPage.css';
 
@@ -18,31 +21,54 @@ const priorityVariant: Record<string, 'danger' | 'warning' | 'neutral'> = {
 
 const ProjectDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const { projects, selectedProject, fetchProject, loading } = useProjects();
+  const { projects, selectedProject, fetchProject, loading, addMember, removeMember } = useProjects();
+  const { user } = useAuth();
+  const { sendInvite } = useInvites();
   const navigate = useNavigate();
 
-  // Load full project (with tasks) when page mounts
-  useEffect(() => {
-    if (id) fetchProject(id);
-  }, [id, fetchProject]);
+  const [showAddMember, setShowAddMember] = useState(false);
+  const [showInviteCoord, setShowInviteCoord] = useState(false);
+  const [inviteSent, setInviteSent] = useState(false);
+  const [addingMemberId, setAddingMemberId] = useState<string | null>(null);
+
+  useEffect(() => { if (id) fetchProject(id); }, [id, fetchProject]);
 
   const project = selectedProject?.id === id ? selectedProject : projects.find(p => p.id === id);
 
-  if (loading && !project) {
-    return <div className="not-found"><p>Loading project…</p></div>;
-  }
-
-  if (!project) {
-    return (
-      <div className="not-found">
-        <h2>Project not found</h2>
-        <button className="btn-primary" onClick={() => navigate('/projects')}>← Back</button>
-      </div>
-    );
-  }
+  if (loading && !project) return <div className="not-found"><p>Loading project…</p></div>;
+  if (!project) return (
+    <div className="not-found">
+      <h2>Project not found</h2>
+      <button className="btn-primary" onClick={() => navigate('/projects')}>← Back</button>
+    </div>
+  );
 
   const completedTasks = project.tasks.filter(t => t.status === 'done').length;
   const progress = project.tasks.length > 0 ? Math.round((completedTasks / project.tasks.length) * 100) : 0;
+
+  // A user can manage the project if: they are owner, or assigned coordinator,
+  // or there's no coordinator and they're a member
+  const isOwner = user?.id === project.ownerId;
+  const isCoordinator = user?.id === project.coordinatorId;
+  const isMember = project.members.some(m => m.id === user?.id);
+  const canManage = isOwner || isCoordinator || (!project.coordinatorId && isMember);
+
+  const handleAddMember = async (selectedUser: { id: string }) => {
+    setAddingMemberId(selectedUser.id);
+    await addMember(project.id, selectedUser.id);
+    setAddingMemberId(null);
+    setShowAddMember(false);
+  };
+
+  const handleInviteCoordinator = async (selectedUser: { id: string }) => {
+    await sendInvite(project.id, selectedUser.id);
+    setInviteSent(true);
+    setShowInviteCoord(false);
+    setTimeout(() => setInviteSent(false), 3000);
+  };
+
+  const memberIds = project.members.map(m => m.id);
+  if (project.coordinator) memberIds.push(project.coordinator.id);
 
   return (
     <div className="project-detail">
@@ -59,6 +85,14 @@ const ProjectDetailPage: React.FC = () => {
           <div className="detail-meta">
             <Badge label={strings.projects.status[project.status]} variant={statusVariant[project.status]} size="md" />
             <Badge label={project.isPublic ? strings.projects.public : strings.projects.private} variant="neutral" size="md" />
+            {project.coordinator && (
+              <span className="detail-coord-badge">
+                <Crown size={10} /> {project.coordinator.name}
+              </span>
+            )}
+            {!project.coordinator && (
+              <span className="detail-coord-badge detail-coord-badge--none">No coordinator</span>
+            )}
             {project.semester && project.year && (
               <span className="detail-semester">{project.semester} {project.year}</span>
             )}
@@ -86,6 +120,7 @@ const ProjectDetailPage: React.FC = () => {
 
       <div className="detail-grid">
         <div className="detail-main">
+          {/* Technologies */}
           <div className="detail-section">
             <h3 className="detail-section-title">Technologies</h3>
             <div className="tech-grid">
@@ -99,6 +134,7 @@ const ProjectDetailPage: React.FC = () => {
             </div>
           </div>
 
+          {/* Tasks */}
           {project.tasks.length > 0 && (
             <div className="detail-section">
               <div className="section-header-inline">
@@ -141,8 +177,75 @@ const ProjectDetailPage: React.FC = () => {
         </div>
 
         <aside className="detail-sidebar">
+
+          {/* Invite success flash */}
+          {inviteSent && (
+            <div className="invite-flash">Coordinator invitation sent!</div>
+          )}
+
+          {/* Coordinator card */}
           <div className="sidebar-card">
-            <h4 className="sidebar-card-title">Team Members</h4>
+            <div className="sidebar-card-header">
+              <h4 className="sidebar-card-title">Coordinator</h4>
+              {canManage && !project.coordinatorId && (
+                <button className="sidebar-icon-btn" onClick={() => setShowInviteCoord(v => !v)} title="Invite coordinator">
+                  <Crown size={13} />
+                </button>
+              )}
+            </div>
+
+            {showInviteCoord && (
+              <div className="sidebar-search-panel">
+                <p className="sidebar-search-hint">Invite a coordinator — they'll get a notification to accept.</p>
+                <UserSearch
+                  placeholder="Search coordinators…"
+                  roleFilter={['coordinator', 'admin']}
+                  excludeIds={memberIds}
+                  onSelect={handleInviteCoordinator}
+                />
+              </div>
+            )}
+
+            {project.coordinator ? (
+              <div className="member-row">
+                <div className="member-row-avatar coord-avatar">{project.coordinator.name.charAt(0)}</div>
+                <div className="member-row-info">
+                  <span className="member-row-name">{project.coordinator.name}</span>
+                  <span className="member-row-role">{project.coordinator.email}</span>
+                </div>
+                <Crown size={12} style={{ color: '#7c3aed', flexShrink: 0 }} />
+              </div>
+            ) : (
+              <p className="sidebar-empty-hint">
+                {!project.coordinatorId
+                  ? 'No coordinator assigned. All members can manage this project.'
+                  : 'Invitation pending acceptance.'}
+              </p>
+            )}
+          </div>
+
+          {/* Team members card */}
+          <div className="sidebar-card">
+            <div className="sidebar-card-header">
+              <h4 className="sidebar-card-title">Team Members</h4>
+              {canManage && (
+                <button className="sidebar-icon-btn" onClick={() => setShowAddMember(v => !v)} title="Add member">
+                  <UserPlus size={13} />
+                </button>
+              )}
+            </div>
+
+            {showAddMember && (
+              <div className="sidebar-search-panel">
+                <UserSearch
+                  placeholder="Search by name, email or student ID…"
+                  excludeIds={memberIds}
+                  onSelect={handleAddMember}
+                />
+                {addingMemberId && <p className="sidebar-search-hint">Adding…</p>}
+              </div>
+            )}
+
             <div className="members-list">
               {project.members.map(member => (
                 <div key={member.id} className="member-row">
@@ -152,11 +255,20 @@ const ProjectDetailPage: React.FC = () => {
                     <span className="member-row-role">{strings.roles[member.role]}</span>
                   </div>
                   {member.studentId && <span className="member-id">{member.studentId}</span>}
+                  {canManage && member.id !== project.ownerId && (
+                    <button className="member-remove-btn" title="Remove member" onClick={() => removeMember(project.id, member.id)}>
+                      <X size={10} />
+                    </button>
+                  )}
                 </div>
               ))}
+              {project.members.length === 0 && (
+                <p className="sidebar-empty-hint">No members yet.</p>
+              )}
             </div>
           </div>
 
+          {/* Project info card */}
           <div className="sidebar-card">
             <h4 className="sidebar-card-title">Project Info</h4>
             <div className="info-list">

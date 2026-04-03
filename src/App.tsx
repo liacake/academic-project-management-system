@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { ProjectProvider } from './context/ProjectContext';
 import { TechnologyProvider } from './context/TechnologyContext';
 import { TeamProvider } from './context/TeamContext';
+import { InviteProvider } from './context/InviteContext';
 import Layout from './components/layout/Layout';
 import LoginPage from './components/pages/LoginPage';
 import DashboardPage from './components/pages/DashboardPage';
@@ -41,7 +42,9 @@ function App() {
         <ProjectProvider>
           <TechnologyProvider>
             <TeamProvider>
-              <AppRoutes />
+              <InviteProvider>
+                <AppRoutes />
+              </InviteProvider>
             </TeamProvider>
           </TechnologyProvider>
         </ProjectProvider>

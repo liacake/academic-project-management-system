@@ -1,6 +1,7 @@
 export type Role = 'student' | 'coordinator' | 'admin' | 'guest';
 export type TaskStatus = 'todo' | 'in-progress' | 'review' | 'done';
 export type ProjectStatus = 'planning' | 'active' | 'completed' | 'archived';
+export type InviteStatus = 'pending' | 'accepted' | 'declined';
 
 export interface User {
   id: string;
@@ -31,6 +32,17 @@ export interface Task {
   updatedAt: string;
 }
 
+export interface CoordinatorInvite {
+  id: string;
+  projectId: string;
+  projectTitle: string;
+  inviteeId: string;
+  invitedBy: string;
+  invitedByName: string;
+  status: InviteStatus;
+  createdAt: string;
+}
+
 export interface Project {
   id: string;
   title: string;
@@ -40,6 +52,8 @@ export interface Project {
   members: User[];
   tasks: Task[];
   ownerId: string;
+  coordinatorId?: string;
+  coordinator?: User;
   semester?: string;
   year?: number;
   repositoryUrl?: string;

@@ -15,26 +15,19 @@ interface ProjectContextType {
   updateProject: (id: string, updates: Partial<Project>) => Promise<void>;
   deleteProject: (id: string) => Promise<void>;
   addTask: (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+  addMember: (projectId: string, userId: string) => Promise<void>;
+  removeMember: (projectId: string, userId: string) => Promise<void>;
 }
 
 const ProjectContext = createContext<ProjectContextType | null>(null);
 
-// ── helpers to map DB rows → our types ───────────────────────────────────────
-
 function dbToTech(t: Record<string, unknown>): Technology {
-  return {
-    id: t.id as string,
-    name: t.name as string,
-    category: t.category as Technology['category'],
-    color: t.color as string,
-  };
+  return { id: t.id as string, name: t.name as string, category: t.category as Technology['category'], color: t.color as string };
 }
 
 function dbToUser(p: Record<string, unknown>): User {
   return {
-    id: p.id as string,
-    name: p.name as string,
-    email: p.email as string,
+    id: p.id as string, name: p.name as string, email: p.email as string,
     role: p.role as User['role'],
     studentId: (p.student_id ?? undefined) as string | undefined,
     avatar: (p.avatar ?? undefined) as string | undefined,
@@ -43,79 +36,55 @@ function dbToUser(p: Record<string, unknown>): User {
 
 function dbToTask(t: Record<string, unknown>): Task {
   return {
-    id: t.id as string,
-    title: t.title as string,
+    id: t.id as string, title: t.title as string,
     description: (t.description ?? undefined) as string | undefined,
     status: t.status as TaskStatus,
     assigneeId: (t.assignee_id ?? undefined) as string | undefined,
     projectId: t.project_id as string,
     priority: t.priority as Task['priority'],
     dueDate: (t.due_date ?? undefined) as string | undefined,
-    createdAt: t.created_at as string,
-    updatedAt: t.updated_at as string,
+    createdAt: t.created_at as string, updatedAt: t.updated_at as string,
   };
 }
 
-function dbToProject(
-  p: Record<string, unknown>,
-  techs: Technology[],
-  members: User[],
-  tasks: Task[]
-): Project {
+function dbToProject(p: Record<string, unknown>, techs: Technology[], members: User[], tasks: Task[]): Project {
+  const coordinatorRaw = p.coordinator as Record<string, unknown> | null | undefined;
   return {
-    id: p.id as string,
-    title: p.title as string,
-    description: p.description as string,
+    id: p.id as string, title: p.title as string, description: p.description as string,
     status: p.status as Project['status'],
     ownerId: (p.owner_id ?? '') as string,
+    coordinatorId: (p.coordinator_id ?? undefined) as string | undefined,
+    coordinator: coordinatorRaw ? dbToUser(coordinatorRaw) : undefined,
     semester: (p.semester ?? undefined) as string | undefined,
     year: (p.year ?? undefined) as number | undefined,
     repositoryUrl: (p.repository_url ?? undefined) as string | undefined,
     demoUrl: (p.demo_url ?? undefined) as string | undefined,
     thumbnail: (p.thumbnail ?? undefined) as string | undefined,
     isPublic: p.is_public as boolean,
-    createdAt: p.created_at as string,
-    updatedAt: p.updated_at as string,
-    technologies: techs,
-    members,
-    tasks,
+    createdAt: p.created_at as string, updatedAt: p.updated_at as string,
+    technologies: techs, members, tasks,
   };
 }
-
-// ── full project fetch (with relations) ──────────────────────────────────────
 
 async function loadFullProject(projectId: string): Promise<Project | null> {
   const { data: p, error } = await supabase
     .from('projects')
-    .select('*')
+    .select('*, coordinator:profiles!projects_coordinator_id_fkey(*)')
     .eq('id', projectId)
     .single();
   if (error || !p) return null;
 
   const [techRows, memberRows, taskRows] = await Promise.all([
-    supabase
-      .from('project_technologies')
-      .select('technologies(*)')
-      .eq('project_id', projectId),
-    supabase
-      .from('project_members')
-      .select('profiles(*)')
-      .eq('project_id', projectId),
-    supabase
-      .from('tasks')
-      .select('*')
-      .eq('project_id', projectId)
-      .order('created_at'),
+    supabase.from('project_technologies').select('technologies(*)').eq('project_id', projectId),
+    supabase.from('project_members').select('profiles(*)').eq('project_id', projectId),
+    supabase.from('tasks').select('*').eq('project_id', projectId).order('created_at'),
   ]);
 
   const techs   = (techRows.data ?? []).map((r: Record<string, unknown>) => dbToTech(r.technologies as Record<string, unknown>));
   const members = (memberRows.data ?? []).map((r: Record<string, unknown>) => dbToUser(r.profiles as Record<string, unknown>));
   const tasks   = (taskRows.data ?? []).map(dbToTask);
-
   return dbToProject(p as Record<string, unknown>, techs, members, tasks);
 }
-
-// ── Provider ─────────────────────────────────────────────────────────────────
 
 export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated } = useAuth();
@@ -124,29 +93,20 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [loading, setLoading]                 = useState(false);
   const [error, setError]                     = useState<string | null>(null);
 
-  // ── load project list (lightweight – no tasks/members) ──
   const fetchProjects = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+    setLoading(true); setError(null);
     const { data, error: err } = await supabase
       .from('projects')
-      .select(`
-        *,
-        project_technologies(technologies(*)),
-        project_members(profiles(*))
-      `)
+      .select(`*, coordinator:profiles!projects_coordinator_id_fkey(*), project_technologies(technologies(*)), project_members(profiles(*))`)
       .order('updated_at', { ascending: false });
 
     if (err) { setError(err.message); setLoading(false); return; }
 
     const mapped: Project[] = (data ?? []).map((p: Record<string, unknown>) => {
-      const techs   = ((p.project_technologies as Array<Record<string, unknown>>) ?? [])
-        .map(r => dbToTech(r.technologies as Record<string, unknown>));
-      const members = ((p.project_members as Array<Record<string, unknown>>) ?? [])
-        .map(r => dbToUser(r.profiles as Record<string, unknown>));
+      const techs   = ((p.project_technologies as Array<Record<string, unknown>>) ?? []).map(r => dbToTech(r.technologies as Record<string, unknown>));
+      const members = ((p.project_members as Array<Record<string, unknown>>) ?? []).map(r => dbToUser(r.profiles as Record<string, unknown>));
       return dbToProject(p, techs, members, []);
     });
-
     setProjects(mapped);
     setLoading(false);
   }, []);
@@ -156,56 +116,30 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     else { setProjects([]); setSelectedProject(null); }
   }, [isAuthenticated, fetchProjects]);
 
-  // ── select + load full project (with tasks) ──
   const selectProject = useCallback((id: string | null) => {
     if (!id) { setSelectedProject(null); return; }
-    const lite = projects.find(p => p.id === id) ?? null;
-    setSelectedProject(lite); // show quickly
+    setSelectedProject(projects.find(p => p.id === id) ?? null);
   }, [projects]);
 
   const fetchProject = useCallback(async (id: string) => {
     const full = await loadFullProject(id);
     setSelectedProject(full);
-    if (full) {
-      setProjects(prev => prev.map(p => p.id === id ? { ...full, tasks: full.tasks } : p));
-    }
+    if (full) setProjects(prev => prev.map(p => p.id === id ? { ...full, tasks: full.tasks } : p));
   }, []);
 
-  // ── CRUD ────────────────────────────────────────────────
-
-  const addProject = useCallback(async (
-    project: Omit<Project, 'id' | 'createdAt' | 'updatedAt' | 'tasks'>
-  ): Promise<Project | null> => {
-    const { data: proj, error: err } = await supabase
-      .from('projects')
-      .insert({
-        title: project.title,
-        description: project.description,
-        status: project.status,
-        owner_id: project.ownerId,
-        semester: project.semester ?? null,
-        year: project.year ?? null,
-        repository_url: project.repositoryUrl ?? null,
-        demo_url: project.demoUrl ?? null,
-        is_public: project.isPublic,
-      })
-      .select()
-      .single();
+  const addProject = useCallback(async (project: Omit<Project, 'id' | 'createdAt' | 'updatedAt' | 'tasks'>): Promise<Project | null> => {
+    const { data: proj, error: err } = await supabase.from('projects').insert({
+      title: project.title, description: project.description, status: project.status,
+      owner_id: project.ownerId, semester: project.semester ?? null, year: project.year ?? null,
+      repository_url: project.repositoryUrl ?? null, demo_url: project.demoUrl ?? null, is_public: project.isPublic,
+    }).select().single();
 
     if (err || !proj) { setError(err?.message ?? 'Failed to create project'); return null; }
 
-    // technologies
-    if (project.technologies.length > 0) {
-      await supabase.from('project_technologies').insert(
-        project.technologies.map(t => ({ project_id: proj.id, technology_id: t.id }))
-      );
-    }
-    // members
-    if (project.members.length > 0) {
-      await supabase.from('project_members').insert(
-        project.members.map(m => ({ project_id: proj.id, user_id: m.id }))
-      );
-    }
+    if (project.technologies.length > 0)
+      await supabase.from('project_technologies').insert(project.technologies.map(t => ({ project_id: proj.id, technology_id: t.id })));
+    if (project.members.length > 0)
+      await supabase.from('project_members').insert(project.members.map(m => ({ project_id: proj.id, user_id: m.id })));
 
     await fetchProjects();
     return dbToProject(proj as Record<string, unknown>, project.technologies, project.members, []);
@@ -221,7 +155,7 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     if (updates.repositoryUrl !== undefined) dbUpdates.repository_url = updates.repositoryUrl;
     if (updates.demoUrl     !== undefined) dbUpdates.demo_url       = updates.demoUrl;
     if (updates.isPublic    !== undefined) dbUpdates.is_public      = updates.isPublic;
-
+    if (updates.coordinatorId !== undefined) dbUpdates.coordinator_id = updates.coordinatorId ?? null;
     await supabase.from('projects').update(dbUpdates).eq('id', id);
     await fetchProjects();
   }, [fetchProjects]);
@@ -234,48 +168,42 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const updateTaskStatus = useCallback(async (projectId: string, taskId: string, status: TaskStatus) => {
     await supabase.from('tasks').update({ status }).eq('id', taskId);
-
     const updater = (t: Task) => t.id === taskId ? { ...t, status, updatedAt: new Date().toISOString() } : t;
-
-    setProjects(prev => prev.map(p =>
-      p.id !== projectId ? p : { ...p, tasks: p.tasks.map(updater) }
-    ));
-    setSelectedProject(prev =>
-      prev?.id !== projectId ? prev : { ...prev, tasks: prev.tasks.map(updater) }
-    );
+    setProjects(prev => prev.map(p => p.id !== projectId ? p : { ...p, tasks: p.tasks.map(updater) }));
+    setSelectedProject(prev => prev?.id !== projectId ? prev : { ...prev, tasks: prev.tasks.map(updater) });
   }, []);
 
   const addTask = useCallback(async (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => {
-    const { data, error: err } = await supabase
-      .from('tasks')
-      .insert({
-        project_id:  task.projectId,
-        title:       task.title,
-        description: task.description ?? null,
-        status:      task.status,
-        priority:    task.priority,
-        assignee_id: task.assigneeId ?? null,
-        due_date:    task.dueDate ?? null,
-      })
-      .select()
-      .single();
-
+    const { data, error: err } = await supabase.from('tasks').insert({
+      project_id: task.projectId, title: task.title, description: task.description ?? null,
+      status: task.status, priority: task.priority,
+      assignee_id: task.assigneeId ?? null, due_date: task.dueDate ?? null,
+    }).select().single();
     if (err || !data) { setError(err?.message ?? 'Failed to add task'); return; }
-
     const newTask = dbToTask(data as Record<string, unknown>);
-    setProjects(prev => prev.map(p =>
-      p.id !== task.projectId ? p : { ...p, tasks: [...p.tasks, newTask] }
-    ));
-    setSelectedProject(prev =>
-      prev?.id !== task.projectId ? prev : { ...prev, tasks: [...prev.tasks, newTask] }
-    );
+    const append = (p: Project) => p.id !== task.projectId ? p : { ...p, tasks: [...p.tasks, newTask] };
+    setProjects(prev => prev.map(append));
+    setSelectedProject(prev => prev?.id !== task.projectId ? prev : { ...prev, tasks: [...prev.tasks, newTask] });
+  }, []);
+
+  const addMember = useCallback(async (projectId: string, userId: string) => {
+    await supabase.from('project_members').insert({ project_id: projectId, user_id: userId });
+    await fetchProject(projectId);
+  }, [fetchProject]);
+
+  const removeMember = useCallback(async (projectId: string, userId: string) => {
+    await supabase.from('project_members').delete().eq('project_id', projectId).eq('user_id', userId);
+    const remover = (p: Project) => p.id !== projectId ? p : { ...p, members: p.members.filter(m => m.id !== userId) };
+    setProjects(prev => prev.map(remover));
+    setSelectedProject(prev => prev?.id !== projectId ? prev : { ...prev, members: prev.members.filter(m => m.id !== userId) });
   }, []);
 
   return (
     <ProjectContext.Provider value={{
       projects, selectedProject, loading, error,
-      selectProject, fetchProject,
-      updateTaskStatus, addProject, updateProject, deleteProject, addTask,
+      selectProject, fetchProject, updateTaskStatus,
+      addProject, updateProject, deleteProject, addTask,
+      addMember, removeMember,
     }}>
       {children}
     </ProjectContext.Provider>

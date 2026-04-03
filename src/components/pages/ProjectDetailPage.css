@@ -70,3 +70,49 @@
 .info-row:last-child { border-bottom: none; }
 .info-label { font-size: 0.75rem; color: var(--text-muted); }
 .info-value { font-size: 0.75rem; font-weight: 500; }
+
+/* ── coordinator badge ───────────────────────────────────────────────────── */
+.detail-coord-badge {
+  display: inline-flex; align-items: center; gap: 0.25rem;
+  font-size: 0.72rem; font-weight: 500; color: #7c3aed;
+  background: #f5f3ff; border: 1px solid #ddd6fe;
+  border-radius: 4px; padding: 0.15rem 0.45rem;
+}
+.detail-coord-badge--none {
+  color: var(--text-muted); background: var(--surface); border-color: var(--border); font-weight: 400;
+}
+
+/* ── sidebar card header with action button ──────────────────────────────── */
+.sidebar-card-header {
+  display: flex; align-items: center; justify-content: space-between; margin-bottom: -0.15rem;
+}
+.sidebar-icon-btn {
+  background: none; border: 1px solid var(--border); border-radius: 5px;
+  padding: 0.2rem 0.35rem; cursor: pointer; color: var(--text-muted);
+  display: flex; align-items: center; transition: border-color 0.1s, color 0.1s;
+}
+.sidebar-icon-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ── search panel inside sidebar ─────────────────────────────────────────── */
+.sidebar-search-panel { margin-top: 0.1rem; }
+.sidebar-search-hint { font-size: 0.73rem; color: var(--text-muted); margin: 0.3rem 0 0.45rem; line-height: 1.4; }
+
+/* ── coordinator avatar ──────────────────────────────────────────────────── */
+.coord-avatar { background: #7c3aed !important; }
+
+/* ── member remove button ────────────────────────────────────────────────── */
+.member-remove-btn {
+  background: none; border: none; cursor: pointer; padding: 0.15rem;
+  color: var(--text-muted); display: flex; align-items: center;
+  border-radius: 3px; transition: color 0.1s, background 0.1s; margin-left: auto;
+}
+.member-remove-btn:hover { color: #dc2626; background: #fef2f2; }
+
+/* ── empty hint ──────────────────────────────────────────────────────────── */
+.sidebar-empty-hint { font-size: 0.78rem; color: var(--text-muted); margin: 0; line-height: 1.5; }
+
+/* ── invite flash ────────────────────────────────────────────────────────── */
+.invite-flash {
+  background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 7px;
+  padding: 0.55rem 0.85rem; font-size: 0.8rem; color: #166534; font-weight: 500;
+}

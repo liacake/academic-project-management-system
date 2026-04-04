@@ -276,6 +276,30 @@ create trigger on_auth_user_created
   after insert on auth.users
   for each row execute procedure public.handle_new_user();
 
+
+-- -------------------------------------------------------
+-- ANON (guest) read access for public projects
+-- Allows unauthenticated users to browse public projects.
+-- -------------------------------------------------------
+create policy "Anon users can view public projects"
+  on public.projects for select
+  using (is_public = true);
+
+create policy "Anon users can view technologies of public projects"
+  on public.project_technologies for select
+  using (exists (
+    select 1 from public.projects where id = project_id and is_public = true
+  ));
+
+create policy "Anon users can view members count of public projects"
+  on public.project_members for select
+  using (exists (
+    select 1 from public.projects where id = project_id and is_public = true
+  ));
+
+create policy "Technologies readable by anon"
+  on public.technologies for select using (true);
+
 -- -------------------------------------------------------
 -- SEED: technology catalogue
 -- -------------------------------------------------------

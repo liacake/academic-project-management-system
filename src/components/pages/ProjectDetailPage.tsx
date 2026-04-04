@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ChevronLeft, Kanban, Github, ExternalLink, Check, UserPlus, Crown, X } from 'lucide-react';
+import { ChevronLeft, Kanban, Github, ExternalLink, Check, UserPlus, Crown, X, Pencil } from 'lucide-react';
+import EditProjectModal from '../modals/EditProjectModal';
 import { useProjects } from '../../context/ProjectContext';
 import { useAuth } from '../../context/AuthContext';
 import { useInvites } from '../../context/InviteContext';
@@ -27,6 +28,7 @@ const ProjectDetailPage: React.FC = () => {
   const navigate = useNavigate();
 
   const [showAddMember, setShowAddMember] = useState(false);
+  const [showEdit, setShowEdit] = useState(false);
   const [showInviteCoord, setShowInviteCoord] = useState(false);
   const [inviteSent, setInviteSent] = useState(false);
   const [addingMemberId, setAddingMemberId] = useState<string | null>(null);
@@ -102,6 +104,11 @@ const ProjectDetailPage: React.FC = () => {
         </div>
 
         <div className="detail-actions">
+          {canManage && (
+            <button className="btn-secondary" onClick={() => setShowEdit(true)}>
+              <Pencil size={14} /> Edit
+            </button>
+          )}
           <button className="btn-secondary" onClick={() => navigate('/kanban', { state: { projectId: project.id } })}>
             <Kanban size={14} /> Kanban
           </button>
@@ -289,6 +296,7 @@ const ProjectDetailPage: React.FC = () => {
           </div>
         </aside>
       </div>
+      {showEdit && <EditProjectModal project={project} onClose={() => setShowEdit(false)} />}
     </div>
   );
 };

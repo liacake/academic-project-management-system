@@ -6,6 +6,7 @@ import { TeamProvider } from './context/TeamContext';
 import { InviteProvider } from './context/InviteContext';
 import Layout from './components/layout/Layout';
 import LoginPage from './components/pages/LoginPage';
+import BrowsePage from './components/pages/BrowsePage';
 import DashboardPage from './components/pages/DashboardPage';
 import ProjectsPage from './components/pages/ProjectsPage';
 import ProjectDetailPage from './components/pages/ProjectDetailPage';
@@ -22,15 +23,21 @@ const AppRoutes: React.FC = () => {
   const { isAuthenticated } = useAuth();
   return (
     <Routes>
-      <Route path="/login" element={isAuthenticated ? <Navigate to="/" replace /> : <LoginPage />} />
+      {/* Public routes — no auth required */}
+      <Route path="/login"  element={isAuthenticated ? <Navigate to="/" replace /> : <LoginPage />} />
+      <Route path="/browse" element={<BrowsePage />} />
+
+      {/* Protected routes */}
       <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
-        <Route path="/" element={<DashboardPage />} />
-        <Route path="/projects" element={<ProjectsPage />} />
+        <Route path="/"             element={<DashboardPage />} />
+        <Route path="/projects"     element={<ProjectsPage />} />
         <Route path="/projects/:id" element={<ProjectDetailPage />} />
-        <Route path="/kanban" element={<KanbanPage />} />
-        <Route path="/team" element={<TeamPage />} />
+        <Route path="/kanban"       element={<KanbanPage />} />
+        <Route path="/team"         element={<TeamPage />} />
       </Route>
-      <Route path="*" element={<Navigate to="/" replace />} />
+
+      {/* Fallback: guests go to browse, authenticated users go home */}
+      <Route path="*" element={isAuthenticated ? <Navigate to="/" replace /> : <Navigate to="/browse" replace />} />
     </Routes>
   );
 };

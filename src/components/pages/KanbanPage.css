@@ -34,3 +34,42 @@
 
 .kanban-empty { display: flex; align-items: center; justify-content: center; border: 1px dashed var(--border); border-radius: 6px; padding: 1.5rem 1rem; color: var(--text-muted); font-size: 0.75rem; flex: 1; min-height: 60px; transition: all 0.1s; }
 .kanban-empty--active { border-color: var(--accent); color: var(--accent); }
+
+/* ── add task button in column header ──────────────────────────────────────── */
+.kanban-add-btn {
+  background: none; border: 1px solid var(--border); border-radius: 4px;
+  padding: 0.1rem 0.25rem; cursor: pointer; color: var(--text-muted);
+  display: flex; align-items: center; transition: border-color 0.1s, color 0.1s;
+}
+.kanban-add-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ── inline add card form ──────────────────────────────────────────────────── */
+.add-card-form {
+  background: var(--bg); border: 1px solid var(--accent);
+  border-radius: 6px; padding: 0.6rem 0.65rem;
+  display: flex; flex-direction: column; gap: 0.5rem;
+}
+.add-card-input {
+  width: 100%; border: none; outline: none; background: transparent;
+  font-size: 0.85rem; font-family: var(--font); color: var(--text);
+  resize: none; line-height: 1.4;
+}
+.add-card-input::placeholder { color: var(--text-muted); }
+.add-card-controls {
+  display: flex; align-items: center; justify-content: space-between; gap: 0.4rem;
+}
+.add-card-priority {
+  font-size: 0.75rem; border: 1px solid var(--border); border-radius: 4px;
+  padding: 0.2rem 0.4rem; background: var(--bg); color: var(--text);
+  font-family: var(--font); cursor: pointer;
+}
+.add-card-actions { display: flex; align-items: center; gap: 0.3rem; }
+.add-card-cancel {
+  background: none; border: 1px solid var(--border); border-radius: 4px;
+  padding: 0.2rem 0.35rem; cursor: pointer; color: var(--text-muted);
+  display: flex; align-items: center;
+}
+.add-card-cancel:hover { border-color: var(--text-muted); color: var(--text); }
+.add-card-save {
+  padding: 0.2rem 0.65rem; font-size: 0.78rem; border-radius: 4px;
+}

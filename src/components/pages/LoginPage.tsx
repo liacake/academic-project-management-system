@@ -4,26 +4,47 @@ import { useAuth } from '../../context/AuthContext';
 import strings from '../ui/strings';
 import './LoginPage.css';
 
+type Mode = 'login' | 'signup';
+
 const LoginPage: React.FC = () => {
-  const [email, setEmail] = useState('');
+  const [mode, setMode] = useState<Mode>('login');
+  const [email, setEmail]       = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  const [name, setName]         = useState('');
+  const [confirm, setConfirm]   = useState('');
+  const [error, setError]       = useState('');
+  const [success, setSuccess]   = useState('');
+  const [loading, setLoading]   = useState(false);
+  const { login, signup } = useAuth();
   const navigate = useNavigate();
+
+  // Derived student ID preview
+  const studentIdPreview = email.includes('@') ? email.split('@')[0] : '';
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    setError('');
-    setLoading(true);
-    const success = await login(email, password);
-    setLoading(false);
-    if (success) {
-      navigate('/');
-    } else {
-      setError('Invalid email or password. Please check your credentials.');
+    setError(''); setSuccess('');
+
+    if (mode === 'signup') {
+      if (password !== confirm) { setError('Passwords do not match.'); return; }
+      if (password.length < 6) { setError('Password must be at least 6 characters.'); return; }
+      setLoading(true);
+      const result = await signup(email, password, name || studentIdPreview);
+      setLoading(false);
+      if (!result.success) { setError(result.error ?? 'Sign up failed.'); return; }
+      setSuccess('Account created! You can now sign in.');
+      setMode('login');
+      setPassword(''); setConfirm(''); setName('');
+      return;
     }
+
+    setLoading(true);
+    const ok = await login(email, password);
+    setLoading(false);
+    if (ok) { navigate('/'); } else { setError('Invalid email or password.'); }
   };
+
+  const switchMode = (m: Mode) => { setMode(m); setError(''); setSuccess(''); };
 
   return (
     <div className="login-page">
@@ -34,47 +55,61 @@ const LoginPage: React.FC = () => {
           <p className="login-subtitle">{strings.appFullName}</p>
         </div>
 
-        <h2 className="login-heading">{strings.auth.loginTitle}</h2>
-        <p className="login-desc">{strings.auth.loginSubtitle}</p>
+        {/* Tab switcher */}
+        <div className="login-tabs">
+          <button className={`login-tab ${mode === 'login' ? 'login-tab--active' : ''}`} onClick={() => switchMode('login')} type="button">Sign in</button>
+          <button className={`login-tab ${mode === 'signup' ? 'login-tab--active' : ''}`} onClick={() => switchMode('signup')} type="button">Create account</button>
+        </div>
+
+        {success && <div className="login-success">{success}</div>}
 
         <form className="login-form" onSubmit={handleSubmit}>
+          {mode === 'signup' && (
+            <div className="form-group">
+              <label htmlFor="name">Full name <span className="form-optional">(optional)</span></label>
+              <input id="name" type="text" value={name} onChange={e => setName(e.target.value)}
+                placeholder="Alice Santos" autoComplete="name" />
+            </div>
+          )}
+
           <div className="form-group">
             <label htmlFor="email">{strings.auth.email}</label>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              placeholder="you@university.edu"
-              required
-              autoComplete="email"
-            />
+            <input id="email" type="email" value={email} onChange={e => setEmail(e.target.value)}
+              placeholder="you@university.edu" required autoComplete="email" />
           </div>
+
+          {mode === 'signup' && studentIdPreview && (
+            <div className="login-student-id-hint">
+              Your student ID will be: <strong>{studentIdPreview}</strong>
+            </div>
+          )}
+
           <div className="form-group">
             <label htmlFor="password">{strings.auth.password}</label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              placeholder="••••••••"
-              required
-              autoComplete="current-password"
-            />
+            <input id="password" type="password" value={password} onChange={e => setPassword(e.target.value)}
+              placeholder="••••••••" required autoComplete={mode === 'signup' ? 'new-password' : 'current-password'} />
           </div>
+
+          {mode === 'signup' && (
+            <div className="form-group">
+              <label htmlFor="confirm">Confirm password</label>
+              <input id="confirm" type="password" value={confirm} onChange={e => setConfirm(e.target.value)}
+                placeholder="••••••••" required autoComplete="new-password" />
+            </div>
+          )}
 
           {error && <div className="login-error">{error}</div>}
 
           <button type="submit" className="login-btn" disabled={loading}>
-            {loading ? strings.auth.loggingIn : strings.auth.loginButton}
+            {loading ? (mode === 'signup' ? 'Creating account…' : strings.auth.loggingIn)
+                     : (mode === 'signup' ? 'Create account' : strings.auth.loginButton)}
           </button>
         </form>
 
-        <div className="login-demo">
-          <p className="demo-label">Sign in with your university email and password.</p>
-          <p style={{ fontSize: '0.78rem', color: '#888', marginTop: '0.5rem' }}>
-            Don't have an account? Ask your system administrator to create one.
-          </p>
+        <div className="login-guest-link">
+          <a href="/" onClick={e => { e.preventDefault(); navigate('/browse'); }}>
+            Browse public projects without signing in →
+          </a>
         </div>
       </div>
     </div>

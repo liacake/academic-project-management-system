@@ -5,6 +5,7 @@ import { User, AuthState, Role } from '../types';
 
 interface AuthContextType extends AuthState {
   login: (email: string, password: string) => Promise<boolean>;
+  signup: (email: string, password: string, name: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
   hasRole: (...roles: Role[]) => boolean;
 }
@@ -19,9 +20,7 @@ async function fetchProfile(userId: string): Promise<User | null> {
     .single();
   if (error || !data) return null;
   return {
-    id: data.id,
-    name: data.name,
-    email: data.email,
+    id: data.id, name: data.name, email: data.email,
     role: data.role as Role,
     studentId: data.student_id ?? undefined,
     avatar: data.avatar ?? undefined,
@@ -29,33 +28,20 @@ async function fetchProfile(userId: string): Promise<User | null> {
 }
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [authState, setAuthState] = useState<AuthState>({
-    user: null,
-    isAuthenticated: false,
-    token: null,
-  });
+  const [authState, setAuthState] = useState<AuthState>({ user: null, isAuthenticated: false, token: null });
   const [loading, setLoading] = useState(true);
 
   const applySession = useCallback(async (session: Session | null) => {
-    if (!session) {
-      setAuthState({ user: null, isAuthenticated: false, token: null });
-      return;
-    }
+    if (!session) { setAuthState({ user: null, isAuthenticated: false, token: null }); return; }
     const profile = await fetchProfile(session.user.id);
-    setAuthState({
-      user: profile,
-      isAuthenticated: !!profile,
-      token: session.access_token,
-    });
+    setAuthState({ user: profile, isAuthenticated: !!profile, token: session.access_token });
   }, []);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       applySession(session).finally(() => setLoading(false));
     });
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => { applySession(session); }
-    );
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => { applySession(session); });
     return () => subscription.unsubscribe();
   }, [applySession]);
 
@@ -65,9 +51,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return true;
   }, []);
 
-  const logout = useCallback(async () => {
-    await supabase.auth.signOut();
+  const signup = useCallback(async (email: string, password: string, name: string): Promise<{ success: boolean; error?: string }> => {
+    // student_id is derived from the part before @ in the email
+    const studentId = email.split('@')[0];
+    const { error } = await supabase.auth.signUp({
+      email, password,
+      options: { data: { name, role: 'student', student_id: studentId } },
+    });
+    if (error) return { success: false, error: error.message };
+    return { success: true };
   }, []);
+
+  const logout = useCallback(async () => { await supabase.auth.signOut(); }, []);
 
   const hasRole = useCallback((...roles: Role[]): boolean => {
     if (!authState.user) return false;
@@ -75,15 +70,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [authState.user]);
 
   if (loading) {
-    return (
-      <div style={{ display:'flex',alignItems:'center',justifyContent:'center',height:'100vh',fontSize:'1rem',color:'#555' }}>
-        Loading…
-      </div>
-    );
+    return <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100vh', fontSize:'1rem', color:'#555' }}>Loading…</div>;
   }
 
   return (
-    <AuthContext.Provider value={{ ...authState, login, logout, hasRole }}>
+    <AuthContext.Provider value={{ ...authState, login, signup, logout, hasRole }}>
       {children}
     </AuthContext.Provider>
   );

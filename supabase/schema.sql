@@ -33,6 +33,8 @@ create table if not exists public.projects (
   coordinator_id  uuid references public.profiles(id) on delete set null,
   semester        text,
   year            int,
+  start_date      date,
+  end_date        date,
   repository_url  text,
   demo_url        text,
   thumbnail       text,

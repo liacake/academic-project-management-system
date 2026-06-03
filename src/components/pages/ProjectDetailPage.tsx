@@ -34,6 +34,7 @@ const ProjectDetailPage: React.FC = () => {
   const [showEdit, setShowEdit] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
   const [showInviteCoord, setShowInviteCoord] = useState(false);
   const [inviteSent, setInviteSent] = useState(false);
   const [addingMemberId, setAddingMemberId] = useState<string | null>(null);
@@ -55,12 +56,18 @@ const ProjectDetailPage: React.FC = () => {
 
   const canManage = canModifyProject(user, project);
   const canDelete = canDeleteProject(user, project);
+  const isAdminDelete = user?.role === 'admin' && user.id !== project.ownerId;
 
   const handleDelete = async () => {
     setDeleting(true);
-    await deleteProject(project.id);
-    setDeleting(false);
-    navigate('/projects');
+    setDeleteError('');
+    try {
+      await deleteProject(project.id);
+      navigate('/projects');
+    } catch {
+      setDeleteError(strings.projects.deleteError);
+      setDeleting(false);
+    }
   };
 
   const handleAddMember = async (selectedUser: { id: string }) => {
@@ -121,7 +128,7 @@ const ProjectDetailPage: React.FC = () => {
             </button>
           )}
           {canDelete && (
-            <button type="button" className="btn-danger" onClick={() => setShowDeleteConfirm(true)}>
+            <button type="button" className="btn-danger" onClick={() => { setDeleteError(''); setShowDeleteConfirm(true); }}>
               <Trash2 size={14} /> {strings.projects.deleteProject}
             </button>
           )}
@@ -325,8 +332,11 @@ const ProjectDetailPage: React.FC = () => {
                 <X size={14} />
               </button>
             </div>
-            <p className="modal-confirm-text">{strings.projects.confirmDelete}</p>
+            <p className="modal-confirm-text">
+              {isAdminDelete ? strings.projects.confirmDeleteAdmin : strings.projects.confirmDelete}
+            </p>
             <p className="modal-confirm-name"><strong>{project.title}</strong></p>
+            {deleteError && <div className="login-error">{deleteError}</div>}
             <div className="modal-footer">
               <button type="button" className="btn-cancel" onClick={() => setShowDeleteConfirm(false)} disabled={deleting}>
                 {strings.modal.cancel}

@@ -187,7 +187,8 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
   }, [fetchProjects, fetchProject]);
 
   const deleteProject = useCallback(async (id: string) => {
-    await supabase.from('projects').delete().eq('id', id);
+    const { error } = await supabase.from('projects').delete().eq('id', id);
+    if (error) throw error;
     setProjects(prev => prev.filter(p => p.id !== id));
     setSelectedProject(prev => prev?.id === id ? null : prev);
   }, []);

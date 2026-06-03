@@ -61,6 +61,8 @@ const strings = {
     editProject: 'Edit Project',
     deleteProject: 'Delete Project',
     confirmDelete: 'Are you sure you want to delete this project?',
+    confirmDeleteAdmin: 'Delete this project permanently? All tasks and team links will be removed.',
+    deleteError: 'Could not delete the project. You may not have permission.',
     tasks: 'Tasks',
     members: 'Members',
     technologies: 'Technologies',

@@ -7,6 +7,7 @@ import { InviteProvider } from './context/InviteContext';
 import Layout from './components/layout/Layout';
 import LoginPage from './components/pages/LoginPage';
 import BrowsePage from './components/pages/BrowsePage';
+import PublicProjectDetailPage from './components/pages/PublicProjectDetailPage';
 import DashboardPage from './components/pages/DashboardPage';
 import ProjectsPage from './components/pages/ProjectsPage';
 import ProjectDetailPage from './components/pages/ProjectDetailPage';
@@ -26,6 +27,7 @@ const AppRoutes: React.FC = () => {
       {/* Public routes — no auth required */}
       <Route path="/login"  element={isAuthenticated ? <Navigate to="/" replace /> : <LoginPage />} />
       <Route path="/browse" element={<BrowsePage />} />
+      <Route path="/browse/:id" element={<PublicProjectDetailPage />} />
 
       {/* Protected routes */}
       <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>

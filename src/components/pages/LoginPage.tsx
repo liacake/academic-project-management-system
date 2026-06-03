@@ -39,9 +39,10 @@ const LoginPage: React.FC = () => {
     }
 
     setLoading(true);
-    const ok = await login(email, password);
+    const result = await login(email, password);
     setLoading(false);
-    if (ok) { navigate('/'); } else { setError('Invalid email or password.'); }
+    if (result.success) { navigate('/'); }
+    else { setError(result.error ?? strings.auth.loginError); }
   };
 
   const switchMode = (m: Mode) => { setMode(m); setError(''); setSuccess(''); };

@@ -68,3 +68,4 @@ dist-ssr/
 supabase/.branches/
 supabase/migrations/
 !supabase/migrations/.gitkeep
+APMS.zip

@@ -1,10 +1,12 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
+import { formatAuthError } from '../lib/authErrors';
+import strings from '../components/ui/strings';
 import { User, AuthState, Role } from '../types';
 
 interface AuthContextType extends AuthState {
-  login: (email: string, password: string) => Promise<boolean>;
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   signup: (email: string, password: string, name: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
   hasRole: (...roles: Role[]) => boolean;
@@ -45,10 +47,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => subscription.unsubscribe();
   }, [applySession]);
 
-  const login = useCallback(async (email: string, password: string): Promise<boolean> => {
+  const login = useCallback(async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error || !data.session) return false;
-    return true;
+    if (error) return { success: false, error: formatAuthError(error.message) };
+    if (!data.session) return { success: false, error: strings.auth.loginError };
+    return { success: true };
   }, []);
 
   const signup = useCallback(async (email: string, password: string, name: string): Promise<{ success: boolean; error?: string }> => {
@@ -58,7 +61,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       email, password,
       options: { data: { name, role: 'student', student_id: studentId } },
     });
-    if (error) return { success: false, error: error.message };
+    if (error) return { success: false, error: formatAuthError(error.message) };
     return { success: true };
   }, []);
 

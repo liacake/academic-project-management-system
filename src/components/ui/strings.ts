@@ -29,6 +29,7 @@ const strings = {
   dashboard: {
     title: 'Dashboard',
     subtitle: 'Overview of your academic projects',
+    subtitleOverview: 'Overview of {n} projects you can access',
     totalProjects: 'Total Projects',
     activeProjects: 'Active Projects',
     completedProjects: 'Completed Projects',
@@ -42,6 +43,7 @@ const strings = {
   projects: {
     title: 'Projects',
     subtitle: 'All academic projects',
+    subtitleOverview: 'All accessible projects',
     new: 'New Project',
     search: 'Search projects...',
     filter: 'Filter',

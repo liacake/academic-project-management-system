@@ -4,6 +4,10 @@ export function canCreateProjects(role?: Role): boolean {
   return role === 'student' || role === 'coordinator' || role === 'admin';
 }
 
+export function canViewAllProjects(role?: Role): boolean {
+  return role === 'coordinator' || role === 'admin';
+}
+
 export function canModifyProject(user: User | null | undefined, project: Project): boolean {
   if (!user || user.role === 'guest') return false;
   if (user.role === 'admin') return true;

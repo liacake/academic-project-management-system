@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Search, X, SlidersHorizontal } from 'lucide-react';
 import { useProjects } from '../../context/ProjectContext';
 import { useAuth } from '../../context/AuthContext';
-import { canCreateProjects } from '../../lib/permissions';
+import { canCreateProjects, canViewAllProjects } from '../../lib/permissions';
 import { ProjectStatus } from '../../types';
 import ProjectCard from '../ui/ProjectCard';
 import strings from '../ui/strings';
@@ -15,6 +15,7 @@ const ProjectsPage: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const showCreate = canCreateProjects(user?.role);
+  const overviewMode = canViewAllProjects(user?.role);
   const [search, setSearch]           = useState('');
   const [statusFilter, setStatusFilter] = useState<ProjectStatus | 'all'>('all');
   const [showModal, setShowModal]     = useState(false);
@@ -39,7 +40,11 @@ const ProjectsPage: React.FC = () => {
       <div className="page-header">
         <div>
           <h1 className="page-title">{strings.projects.title}</h1>
-          <p className="page-subtitle">{filtered.length} project{filtered.length !== 1 ? 's' : ''}</p>
+          <p className="page-subtitle">
+            {overviewMode
+              ? `${strings.projects.subtitleOverview} · ${filtered.length} of ${projects.length}`
+              : `${filtered.length} project${filtered.length !== 1 ? 's' : ''}`}
+          </p>
         </div>
         {showCreate && (
           <button className="btn-primary" onClick={() => setShowModal(true)}>+ {strings.projects.new}</button>

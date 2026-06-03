@@ -77,7 +77,6 @@
 .task-row-desc { font-size: 0.75rem; color: var(--text-muted); }
 
 .task-row-right { display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap; }
-.task-assignee { width: 20px; height: 20px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 0.58rem; font-weight: 600; display: flex; align-items: center; justify-content: center; }
 .task-due { font-size: 0.68rem; color: var(--text-muted); white-space: nowrap; }
 
 .detail-sidebar { display: flex; flex-direction: column; gap: 0.875rem; }
@@ -86,6 +85,36 @@
 
 .members-list { display: flex; flex-direction: column; gap: 0.5rem; }
 .member-row { display: flex; align-items: center; gap: 0.5rem; }
+
+.member-row-link {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+  min-width: 0;
+  text-decoration: none;
+  color: inherit;
+}
+
+.member-row-link:hover .member-row-name { color: var(--accent); }
+
+.detail-coord-badge .user-link { font-weight: 500; }
+
+.task-assignee {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+
+.task-assignee:hover { opacity: 0.9; }
 .member-row-avatar { width: 26px; height: 26px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 0.65rem; font-weight: 600; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .member-row-info { display: flex; flex-direction: column; line-height: 1.2; flex: 1; min-width: 0; }
 .member-row-name { font-size: 0.82rem; font-weight: 500; }

@@ -1,7 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Search, X } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Search, X, UserRound } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import { profilePath } from '../../lib/profilePaths';
 import { User } from '../../types';
+import strings from './strings';
 import './UserSearch.css';
 
 interface UserSearchProps {
@@ -12,6 +15,7 @@ interface UserSearchProps {
 }
 
 const UserSearch: React.FC<UserSearchProps> = ({ placeholder = 'Search by name, email or student ID…', excludeIds = [], onSelect, roleFilter }) => {
+  const navigate = useNavigate();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
@@ -67,6 +71,14 @@ const UserSearch: React.FC<UserSearchProps> = ({ placeholder = 'Search by name, 
     setOpen(false);
   };
 
+  const openProfile = (user: User, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setOpen(false);
+    setQuery('');
+    setResults([]);
+    navigate(profilePath(user.id));
+  };
+
   const roleColor: Record<string, string> = {
     student: 'var(--accent)', coordinator: '#7c3aed', admin: '#dc2626', guest: 'var(--text-muted)',
   };
@@ -96,16 +108,26 @@ const UserSearch: React.FC<UserSearchProps> = ({ placeholder = 'Search by name, 
           {loading && <div className="user-search-status">Searching…</div>}
           {!loading && results.length === 0 && <div className="user-search-status">No users found</div>}
           {!loading && results.map(user => (
-            <button key={user.id} className="user-search-result" onClick={() => handleSelect(user)}>
-              <div className="user-search-avatar" style={{ background: roleColor[user.role] }}>
-                {user.name.charAt(0).toUpperCase()}
-              </div>
-              <div className="user-search-info">
-                <span className="user-search-name">{user.name}</span>
-                <span className="user-search-meta">{user.email}{user.studentId ? ` · ${user.studentId}` : ''}</span>
-              </div>
-              <span className="user-search-role" style={{ color: roleColor[user.role] }}>{user.role}</span>
-            </button>
+            <div key={user.id} className="user-search-result">
+              <button type="button" className="user-search-result-main" onClick={() => handleSelect(user)}>
+                <div className="user-search-avatar" style={{ background: roleColor[user.role] }}>
+                  {user.name.charAt(0).toUpperCase()}
+                </div>
+                <div className="user-search-info">
+                  <span className="user-search-name">{user.name}</span>
+                  <span className="user-search-meta">{user.email}{user.studentId ? ` · ${user.studentId}` : ''}</span>
+                </div>
+                <span className="user-search-role" style={{ color: roleColor[user.role] }}>{user.role}</span>
+              </button>
+              <button
+                type="button"
+                className="user-search-profile-btn"
+                title={strings.profile.viewProfile}
+                onClick={e => openProfile(user, e)}
+              >
+                <UserRound size={14} />
+              </button>
+            </div>
           ))}
         </div>
       )}

@@ -4,6 +4,7 @@ import { useTeam } from '../../context/TeamContext';
 import { useAuth } from '../../context/AuthContext';
 import { Role } from '../../types';
 import Badge from '../ui/Badge';
+import UserLink from '../ui/UserLink';
 import strings from '../ui/strings';
 import './AdminPage.css';
 
@@ -107,8 +108,10 @@ const AdminPage: React.FC = () => {
                 <tr key={u.id} className={u.id === currentUser?.id ? 'admin-row--self' : ''}>
                   <td>
                     <div className="admin-user-cell">
-                      <div className="admin-avatar">{u.name.charAt(0)}</div>
-                      <span>{u.name}</span>
+                      <UserLink userId={u.id} className="admin-user-link">
+                        <div className="admin-avatar">{u.name.charAt(0)}</div>
+                        <span>{u.name}</span>
+                      </UserLink>
                       {u.id === currentUser?.id && (
                         <span className="admin-you-badge">{strings.admin.you}</span>
                       )}

@@ -35,12 +35,49 @@
 }
 
 .user-search-result {
-  display: flex; align-items: center; gap: 0.55rem; width: 100%;
-  padding: 0.55rem 0.75rem; background: none; border: none; cursor: pointer;
-  text-align: left; transition: background 0.1s;
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+  border-top: 1px solid var(--border);
 }
-.user-search-result:hover { background: var(--surface); }
-.user-search-result + .user-search-result { border-top: 1px solid var(--border); }
+
+.user-search-result:first-of-type { border-top: none; }
+
+.user-search-result-main {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  flex: 1;
+  min-width: 0;
+  padding: 0.55rem 0.5rem 0.55rem 0.75rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  font-family: var(--font);
+  transition: background 0.1s;
+}
+
+.user-search-result-main:hover { background: var(--surface); }
+
+.user-search-profile-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  border-left: 1px solid var(--border);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: color 0.1s, background 0.1s;
+}
+
+.user-search-profile-btn:hover {
+  color: var(--accent);
+  background: var(--accent-bg);
+}
 
 .user-search-avatar {
   width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;

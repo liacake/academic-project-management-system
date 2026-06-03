@@ -4,6 +4,7 @@ import { LayoutDashboard, FolderKanban, Kanban, Users, Shield, Cpu, LogOut, Menu
 import './Navbar.css';
 import strings from './strings';
 import { useAuth } from '../../context/AuthContext';
+import UserLink from './UserLink';
 
 const Navbar: React.FC = () => {
   const [open, setOpen] = useState<boolean>(false);
@@ -70,9 +71,15 @@ const Navbar: React.FC = () => {
         <div className="navbar-actions">
           {isAuthenticated ? (
             <div className="navbar-user">
-              <div className="user-avatar">{user?.name.charAt(0).toUpperCase()}</div>
+              {user && (
+                <UserLink userId={user.id} className="user-avatar-link">
+                  <div className="user-avatar">{user.name.charAt(0).toUpperCase()}</div>
+                </UserLink>
+              )}
               <div className="user-info">
-                <span className="user-name">{user?.name}</span>
+                <span className="user-name">
+                  {user ? <UserLink userId={user.id}>{user.name}</UserLink> : null}
+                </span>
                 <span className="user-role">{strings.roles[user?.role || 'guest']}</span>
               </div>
               <button className="btn-logout" onClick={logout} title={strings.auth.logout}>

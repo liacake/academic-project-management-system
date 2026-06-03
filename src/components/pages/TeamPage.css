@@ -86,7 +86,12 @@
 .team-card-top { display: flex; align-items: center; gap: 0.65rem; flex-wrap: wrap; }
 .team-avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 0.9rem; font-weight: 600; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .team-info { flex: 1; min-width: 0; }
+.team-avatar-link { text-decoration: none; flex-shrink: 0; }
+.team-avatar-link:hover .team-avatar { opacity: 0.9; }
+
 .team-name { font-size: 0.9rem; font-weight: 600; margin: 0 0 0.1rem; }
+.team-name .user-link { color: inherit; }
+.team-name .user-link:hover { color: var(--accent); }
 .team-email { font-size: 0.75rem; color: var(--text-muted); margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .team-card-badges { display: flex; align-items: center; gap: 0.35rem; flex-shrink: 0; }

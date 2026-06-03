@@ -72,12 +72,17 @@
 
 .navbar-user { display: flex; align-items: center; gap: 0.5rem; }
 
+.user-avatar-link { text-decoration: none; flex-shrink: 0; }
+.user-avatar-link:hover .user-avatar { opacity: 0.9; }
+
 .user-avatar {
   width: 28px; height: 28px; border-radius: 50%;
   background: var(--accent); color: #fff;
   font-size: 0.75rem; font-weight: 600;
   display: flex; align-items: center; justify-content: center;
 }
+
+.user-info .user-link:hover { color: var(--accent); }
 
 .user-info { display: none; flex-direction: column; line-height: 1.15; }
 @media (min-width: 768px) { .user-info { display: flex; } }

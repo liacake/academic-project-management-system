@@ -7,6 +7,7 @@ import { useAuth } from '../../context/AuthContext';
 import { canModifyProject, canDeleteProject } from '../../lib/permissions';
 import { useInvites } from '../../context/InviteContext';
 import Badge from '../ui/Badge';
+import UserLink from '../ui/UserLink';
 import UserSearch from '../ui/UserSearch';
 import { formatProjectDate, formatProjectDateRange } from '../../lib/dates';
 import strings from '../ui/strings';
@@ -104,7 +105,8 @@ const ProjectDetailPage: React.FC = () => {
             <Badge label={project.isPublic ? strings.projects.public : strings.projects.private} variant="neutral" size="md" />
             {project.coordinator && (
               <span className="detail-coord-badge">
-                <Crown size={10} /> {project.coordinator.name}
+                <Crown size={10} />{' '}
+                <UserLink userId={project.coordinator.id}>{project.coordinator.name}</UserLink>
               </span>
             )}
             {!project.coordinator && (
@@ -189,7 +191,11 @@ const ProjectDetailPage: React.FC = () => {
                         </div>
                       </div>
                       <div className="task-row-right">
-                        {assignee && <div className="task-assignee" title={assignee.name}>{assignee.name.charAt(0)}</div>}
+                        {assignee && (
+                          <UserLink userId={assignee.id} className="task-assignee" title={assignee.name}>
+                            {assignee.name.charAt(0)}
+                          </UserLink>
+                        )}
                         <Badge label={strings.kanban.columns[task.status]} variant={taskStatusVariant[task.status]} />
                         <Badge label={strings.kanban.priority[task.priority]} variant={priorityVariant[task.priority]} />
                         {task.dueDate && (
@@ -238,11 +244,13 @@ const ProjectDetailPage: React.FC = () => {
 
             {project.coordinator ? (
               <div className="member-row">
-                <div className="member-row-avatar coord-avatar">{project.coordinator.name.charAt(0)}</div>
-                <div className="member-row-info">
-                  <span className="member-row-name">{project.coordinator.name}</span>
-                  <span className="member-row-role">{project.coordinator.email}</span>
-                </div>
+                <UserLink userId={project.coordinator.id} className="member-row-link">
+                  <div className="member-row-avatar coord-avatar">{project.coordinator.name.charAt(0)}</div>
+                  <div className="member-row-info">
+                    <span className="member-row-name">{project.coordinator.name}</span>
+                    <span className="member-row-role">{project.coordinator.email}</span>
+                  </div>
+                </UserLink>
                 <Crown size={12} style={{ color: '#7c3aed', flexShrink: 0 }} />
               </div>
             ) : (
@@ -279,11 +287,13 @@ const ProjectDetailPage: React.FC = () => {
             <div className="members-list">
               {project.members.map(member => (
                 <div key={member.id} className="member-row">
-                  <div className="member-row-avatar">{member.name.charAt(0)}</div>
-                  <div className="member-row-info">
-                    <span className="member-row-name">{member.name}</span>
-                    <span className="member-row-role">{strings.roles[member.role]}</span>
-                  </div>
+                  <UserLink userId={member.id} className="member-row-link">
+                    <div className="member-row-avatar">{member.name.charAt(0)}</div>
+                    <div className="member-row-info">
+                      <span className="member-row-name">{member.name}</span>
+                      <span className="member-row-role">{strings.roles[member.role]}</span>
+                    </div>
+                  </UserLink>
                   {member.studentId && <span className="member-id">{member.studentId}</span>}
                   {canManage && member.id !== project.ownerId && (
                     <button className="member-remove-btn" title="Remove member" onClick={() => removeMember(project.id, member.id)}>

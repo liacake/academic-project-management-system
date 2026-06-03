@@ -29,7 +29,23 @@
 .project-card-footer { display: flex; align-items: center; justify-content: space-between; margin-top: auto; }
 
 .project-card-members { display: flex; align-items: center; }
-.member-avatar { width: 22px; height: 22px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 0.6rem; font-weight: 600; display: flex; align-items: center; justify-content: center; border: 2px solid var(--bg); margin-right: -5px; }
+.member-avatar {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.6rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--bg);
+  margin-right: -5px;
+  text-decoration: none;
+}
+
+.member-avatar:hover { opacity: 0.9; text-decoration: none; }
 .member-avatar--more { background: var(--surface); color: var(--text-muted); }
 
 .project-card-links { display: flex; gap: 0.4rem; }

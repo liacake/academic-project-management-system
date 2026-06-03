@@ -1,6 +1,7 @@
 import { Github, ExternalLink } from 'lucide-react';
 import { Project } from '../../types';
 import Badge from './Badge';
+import UserLink from './UserLink';
 import './ProjectCard.css';
 import { formatProjectDateRange } from '../../lib/dates';
 import strings from './strings';
@@ -60,9 +61,15 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onClick }) => {
       <div className="project-card-footer">
         <div className="project-card-members">
           {project.members.slice(0, 3).map((member, idx) => (
-            <div key={member.id} className="member-avatar" style={{ zIndex: 3 - idx }} title={member.name}>
+            <UserLink
+              key={member.id}
+              userId={member.id}
+              className="member-avatar"
+              title={member.name}
+              onClick={e => e.stopPropagation()}
+            >
               {member.name.charAt(0)}
-            </div>
+            </UserLink>
           ))}
           {project.members.length > 3 && (
             <div className="member-avatar member-avatar--more">+{project.members.length - 3}</div>

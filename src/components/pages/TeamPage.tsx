@@ -5,6 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useTeam } from '../../context/TeamContext';
 import { Project, User } from '../../types';
 import Badge from '../ui/Badge';
+import UserLink from '../ui/UserLink';
 import strings from '../ui/strings';
 import './TeamPage.css';
 
@@ -166,9 +167,13 @@ const TeamPage: React.FC = () => {
             {displayMembers.map(({ user: member, label }) => (
               <div key={member.id} className="team-card">
                 <div className="team-card-top">
-                  <div className="team-avatar">{member.name.charAt(0)}</div>
+                  <UserLink userId={member.id} className="team-avatar-link">
+                    <div className="team-avatar">{member.name.charAt(0)}</div>
+                  </UserLink>
                   <div className="team-info">
-                    <h3 className="team-name">{member.name}</h3>
+                    <h3 className="team-name">
+                      <UserLink userId={member.id}>{member.name}</UserLink>
+                    </h3>
                     <p className="team-email">{member.email}</p>
                   </div>
                   <div className="team-card-badges">

@@ -39,7 +39,15 @@
 .kanban-card-desc { font-size: 0.75rem; color: var(--text-muted); margin: 0; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 
 .kanban-card-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 0.1rem; }
-.kanban-assignee { display: flex; align-items: center; gap: 0.35rem; }
+.kanban-assignee {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  text-decoration: none;
+  color: inherit;
+}
+
+.kanban-assignee:hover span { color: var(--accent); }
 .kanban-assignee-avatar { width: 18px; height: 18px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 0.58rem; font-weight: 600; display: flex; align-items: center; justify-content: center; }
 .kanban-assignee span { font-size: 0.72rem; color: var(--text-muted); }
 .kanban-unassigned { font-size: 0.7rem; color: var(--text-muted); font-style: italic; }

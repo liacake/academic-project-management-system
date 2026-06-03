@@ -6,6 +6,7 @@ import { useAuth } from '../../context/AuthContext';
 import { canModifyProject } from '../../lib/permissions';
 import { TaskStatus, Task } from '../../types';
 import Badge from '../ui/Badge';
+import UserLink from '../ui/UserLink';
 import EditTaskModal from '../modals/EditTaskModal';
 import strings from '../ui/strings';
 import './KanbanPage.css';
@@ -218,10 +219,10 @@ const KanbanPage: React.FC = () => {
                         {task.description && <p className="kanban-card-desc">{task.description}</p>}
                         <div className="kanban-card-footer">
                           {assignee ? (
-                            <div className="kanban-assignee">
+                            <UserLink userId={assignee.id} className="kanban-assignee">
                               <div className="kanban-assignee-avatar">{assignee.name.charAt(0)}</div>
                               <span>{assignee.name.split(' ')[0]}</span>
-                            </div>
+                            </UserLink>
                           ) : (
                             <span className="kanban-unassigned">{strings.kanban.unassigned}</span>
                           )}

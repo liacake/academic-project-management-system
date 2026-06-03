@@ -1,16 +1,23 @@
-import { useState, useEffect, useMemo } from 'react';
-import { Search, X, Crown } from 'lucide-react';
+import { useState, useEffect, useMemo, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Search, X, Crown, UserPlus, ExternalLink } from 'lucide-react';
 import { useProjects } from '../../context/ProjectContext';
 import { useAuth } from '../../context/AuthContext';
 import { useTeam } from '../../context/TeamContext';
+import { canModifyProject, canViewAllProjects } from '../../lib/permissions';
 import { Project, User } from '../../types';
 import Badge from '../ui/Badge';
 import UserLink from '../ui/UserLink';
+import UserSearch from '../ui/UserSearch';
 import strings from '../ui/strings';
 import './TeamPage.css';
 
 const roleVariant: Record<string, 'default' | 'success' | 'warning' | 'danger' | 'neutral'> = {
   student: 'default', coordinator: 'success', admin: 'danger', guest: 'neutral',
+};
+
+const statusVariant: Record<string, 'success' | 'default' | 'neutral' | 'warning'> = {
+  active: 'success', planning: 'warning', completed: 'default', archived: 'neutral',
 };
 
 function matchesQuery(project: Project, query: string): boolean {
@@ -23,15 +30,11 @@ function matchesQuery(project: Project, query: string): boolean {
   );
 }
 
-function isProjectMember(project: Project, userId: string): boolean {
-  return project.members.some(m => m.id === userId);
-}
-
 function isInvolvedInProject(project: Project, userId: string): boolean {
   return (
     project.ownerId === userId ||
     project.coordinatorId === userId ||
-    isProjectMember(project, userId)
+    project.members.some(m => m.id === userId)
   );
 }
 
@@ -59,46 +62,94 @@ function buildMemberList(project: Project, users: User[]): DisplayMember[] {
 }
 
 const TeamPage: React.FC = () => {
-  const { projects, loading: projectsLoading } = useProjects();
+  const navigate = useNavigate();
+  const { projects, loading: projectsLoading, fetchProject, addMember, removeMember } = useProjects();
   const { user } = useAuth();
   const { users, loading: teamLoading } = useTeam();
   const [selectedProjectId, setSelectedProjectId] = useState('');
   const [search, setSearch] = useState('');
+  const [suggestionsOpen, setSuggestionsOpen] = useState(false);
+  const [showAddMember, setShowAddMember] = useState(false);
+  const [addingMemberId, setAddingMemberId] = useState<string | null>(null);
+  const searchRef = useRef<HTMLDivElement>(null);
 
-  const canViewAllTeams = user?.role === 'coordinator' || user?.role === 'admin';
+  const canViewAllTeams = canViewAllProjects(user?.role);
 
-  const involvedProjects = useMemo(
-    () => (user ? projects.filter(p => isInvolvedInProject(p, user.id)) : []),
-    [projects, user]
+  const baseProjects = useMemo(() => {
+    if (!user) return [];
+    return canViewAllTeams ? projects : projects.filter(p => isInvolvedInProject(p, user.id));
+  }, [projects, user, canViewAllTeams]);
+
+  const recentProjects = useMemo(
+    () => [...baseProjects]
+      .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+      .slice(0, 5),
+    [baseProjects]
   );
 
-  const baseProjects = canViewAllTeams ? projects : involvedProjects;
-
-  const dropdownProjects = useMemo(
-    () => baseProjects.filter(p => matchesQuery(p, search)),
-    [baseProjects, search]
-  );
-
-  const selectOptions = dropdownProjects;
+  const searchSuggestions = useMemo(() => {
+    const q = search.trim();
+    if (!q) return [];
+    return baseProjects.filter(p => matchesQuery(p, q)).slice(0, 8);
+  }, [baseProjects, search]);
 
   useEffect(() => {
-    if (!selectedProjectId && baseProjects.length > 0) {
-      setSelectedProjectId(baseProjects[0].id);
+    if (!selectedProjectId && recentProjects.length > 0) {
+      setSelectedProjectId(recentProjects[0].id);
     }
-  }, [baseProjects, selectedProjectId]);
+  }, [recentProjects, selectedProjectId]);
 
   useEffect(() => {
-    if (selectedProjectId && !selectOptions.some(p => p.id === selectedProjectId)) {
-      setSelectedProjectId(selectOptions[0]?.id ?? '');
-    }
-  }, [selectOptions, selectedProjectId]);
+    if (selectedProjectId) fetchProject(selectedProjectId);
+  }, [selectedProjectId, fetchProject]);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+        setSuggestionsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
 
   const selectedProject = projects.find(p => p.id === selectedProjectId);
+  const canManage = selectedProject ? canModifyProject(user, selectedProject) : false;
   const displayMembers = selectedProject ? buildMemberList(selectedProject, users) : [];
+
+  const memberIds = useMemo(() => {
+    if (!selectedProject) return [];
+    const ids = selectedProject.members.map(m => m.id);
+    if (selectedProject.coordinator) ids.push(selectedProject.coordinator.id);
+    if (selectedProject.ownerId) ids.push(selectedProject.ownerId);
+    return ids;
+  }, [selectedProject]);
+
+  const selectProject = (id: string) => {
+    setSelectedProjectId(id);
+    setSearch('');
+    setSuggestionsOpen(false);
+    setShowAddMember(false);
+  };
+
+  const handleAddMember = async (selectedUser: User) => {
+    if (!selectedProject) return;
+    setAddingMemberId(selectedUser.id);
+    await addMember(selectedProject.id, selectedUser.id);
+    setAddingMemberId(null);
+    setShowAddMember(false);
+  };
+
+  const handleRemoveMember = async (memberId: string) => {
+    if (!selectedProject || !window.confirm(strings.team.confirmRemove)) return;
+    await removeMember(selectedProject.id, memberId);
+  };
 
   const loading = projectsLoading || teamLoading;
 
-  if (loading) return <div className="team-page"><p>Loading team…</p></div>;
+  if (loading) {
+    return <div className="team-page"><p className="team-muted">{strings.team.loading}</p></div>;
+  }
 
   return (
     <div className="team-page">
@@ -109,7 +160,25 @@ const TeamPage: React.FC = () => {
         </div>
       </div>
 
-      <div className="team-toolbar">
+      {baseProjects.length > 0 && (
+        <div className="team-recent">
+          <span className="team-recent-label">{strings.team.recentProjects}</span>
+          <div className="team-chips">
+            {recentProjects.map(p => (
+              <button
+                key={p.id}
+                type="button"
+                className={`team-chip ${selectedProjectId === p.id ? 'team-chip--active' : ''}`}
+                onClick={() => selectProject(p.id)}
+              >
+                {p.title}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="team-search-block" ref={searchRef}>
         <div className="team-search-wrapper">
           <Search size={15} className="team-search-icon" />
           <input
@@ -117,89 +186,146 @@ const TeamPage: React.FC = () => {
             className="team-search-input"
             placeholder={strings.team.searchProjects}
             value={search}
-            onChange={e => setSearch(e.target.value)}
+            onChange={e => { setSearch(e.target.value); setSuggestionsOpen(true); }}
+            onFocus={() => setSuggestionsOpen(true)}
           />
           {search && (
-            <button type="button" className="team-search-clear" onClick={() => setSearch('')} aria-label="Clear search">
+            <button
+              type="button"
+              className="team-search-clear"
+              onClick={() => { setSearch(''); setSuggestionsOpen(false); }}
+              aria-label="Clear search"
+            >
               <X size={13} />
             </button>
           )}
         </div>
 
-        <select
-          className="filter-select team-project-select"
-          value={selectedProjectId}
-          onChange={e => setSelectedProjectId(e.target.value)}
-          disabled={selectOptions.length === 0}
-        >
-          <option value="">{strings.team.selectProject}</option>
-          {selectOptions.map(p => (
-            <option key={p.id} value={p.id}>{p.title}</option>
-          ))}
-        </select>
+        {suggestionsOpen && search.trim() && (
+          <div className="team-suggestions">
+            {searchSuggestions.length === 0 ? (
+              <div className="team-suggestion-empty">{strings.team.noMatch}</div>
+            ) : (
+              searchSuggestions.map(p => (
+                <button
+                  key={p.id}
+                  type="button"
+                  className={`team-suggestion ${selectedProjectId === p.id ? 'team-suggestion--active' : ''}`}
+                  onClick={() => selectProject(p.id)}
+                >
+                  <span className="team-suggestion-title">{p.title}</span>
+                  <Badge label={strings.projects.status[p.status]} variant={statusVariant[p.status]} />
+                </button>
+              ))
+            )}
+          </div>
+        )}
       </div>
 
-      {baseProjects.length === 0 && !search.trim() ? (
+      {baseProjects.length === 0 ? (
         <div className="empty-state">
           <div className="empty-icon">👥</div>
           <h3>{strings.team.noProjects}</h3>
           <p>{strings.team.noProjectsHint}</p>
-        </div>
-      ) : selectOptions.length === 0 ? (
-        <div className="empty-state">
-          <div className="empty-icon">🔍</div>
-          <h3>{strings.team.noMatch}</h3>
         </div>
       ) : !selectedProject ? (
         <div className="empty-state">
           <p>{strings.team.selectHint}</p>
         </div>
       ) : (
-        <>
-          <div className="team-project-header">
-            <h2 className="team-project-title">{selectedProject.title}</h2>
-            <p className="team-project-meta">
-              {displayMembers.length} {displayMembers.length === 1 ? strings.team.member : strings.team.members}
-            </p>
+        <div className="team-panel">
+          <div className="team-panel-header">
+            <div className="team-panel-title-wrap">
+              <h2 className="team-project-title">{selectedProject.title}</h2>
+              <div className="team-panel-meta">
+                <Badge label={strings.projects.status[selectedProject.status]} variant={statusVariant[selectedProject.status]} />
+                <span>
+                  {displayMembers.length} {displayMembers.length === 1 ? strings.team.member : strings.team.members}
+                </span>
+              </div>
+            </div>
+            <div className="team-panel-actions">
+              <button type="button" className="btn-secondary" onClick={() => navigate(`/projects/${selectedProject.id}`)}>
+                <ExternalLink size={14} /> {strings.team.viewProject}
+              </button>
+              {canManage && (
+                <button
+                  type="button"
+                  className="btn-primary"
+                  onClick={() => setShowAddMember(v => !v)}
+                >
+                  <UserPlus size={14} /> {strings.team.addMember}
+                </button>
+              )}
+            </div>
           </div>
 
-          <div className="team-grid">
-            {displayMembers.map(({ user: member, label }) => (
-              <div key={member.id} className="team-card">
-                <div className="team-card-top">
-                  <UserLink userId={member.id} className="team-avatar-link">
-                    <div className="team-avatar">{member.name.charAt(0)}</div>
+          {!canManage && (
+            <p className="team-readonly-hint">{strings.team.readonlyHint}</p>
+          )}
+
+          {showAddMember && canManage && (
+            <div className="team-add-panel">
+              <p className="team-add-hint">{strings.team.addMemberHint}</p>
+              <UserSearch
+                placeholder={strings.team.searchUsers}
+                excludeIds={memberIds}
+                onSelect={handleAddMember}
+              />
+              {addingMemberId && <p className="team-add-hint">{strings.team.addingMember}</p>}
+            </div>
+          )}
+
+          <div className="team-member-list">
+            {displayMembers.map(({ user: member, label }) => {
+              const isOwner = member.id === selectedProject.ownerId;
+              const isCoordinator = label === strings.team.coordinator;
+              const inMembersTable = selectedProject.members.some(m => m.id === member.id);
+              const removable = canManage && inMembersTable && !isOwner;
+
+              return (
+                <div key={member.id} className="team-member-row">
+                  <UserLink userId={member.id} className="team-member-link">
+                    <div className={`team-avatar ${isCoordinator ? 'team-avatar--coord' : ''}`}>
+                      {member.name.charAt(0)}
+                    </div>
+                    <div className="team-member-info">
+                      <span className="team-member-name">{member.name}</span>
+                      <span className="team-member-email">{member.email}</span>
+                    </div>
                   </UserLink>
-                  <div className="team-info">
-                    <h3 className="team-name">
-                      <UserLink userId={member.id}>{member.name}</UserLink>
-                    </h3>
-                    <p className="team-email">{member.email}</p>
-                  </div>
-                  <div className="team-card-badges">
-                    {label === strings.team.coordinator && (
-                      <Crown size={14} className="team-coord-icon" aria-hidden />
-                    )}
+
+                  <div className="team-member-badges">
+                    {isCoordinator && <Crown size={14} className="team-coord-icon" aria-hidden />}
+                    {label && <span className="team-role-pill">{label}</span>}
                     <Badge label={strings.roles[member.role]} variant={roleVariant[member.role]} size="md" />
                   </div>
+
+                  {member.studentId && (
+                    <span className="team-member-sid mono">{member.studentId}</span>
+                  )}
+
+                  {removable ? (
+                    <button
+                      type="button"
+                      className="team-remove-btn"
+                      title={strings.team.removeMember}
+                      onClick={() => handleRemoveMember(member.id)}
+                    >
+                      <X size={12} />
+                    </button>
+                  ) : (
+                    <span className="team-remove-spacer" aria-hidden />
+                  )}
                 </div>
-
-                {label && (
-                  <div className="team-project-role">
-                    <span className="team-label">{label}</span>
-                  </div>
-                )}
-
-                {member.studentId && (
-                  <div className="team-student-id">
-                    <span className="team-label">Student ID</span>
-                    <span className="team-value mono">{member.studentId}</span>
-                  </div>
-                )}
-              </div>
-            ))}
+              );
+            })}
           </div>
-        </>
+
+          {displayMembers.length === 0 && (
+            <p className="team-muted">{strings.team.emptyTeam}</p>
+          )}
+        </div>
       )}
     </div>
   );

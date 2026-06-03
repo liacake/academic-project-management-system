@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, FolderKanban, Kanban, Users, LogOut, Menu, X, Compass } from 'lucide-react';
+import { LayoutDashboard, FolderKanban, Kanban, Users, Shield, LogOut, Menu, X, Compass } from 'lucide-react';
 import './Navbar.css';
 import strings from './strings';
 import { useAuth } from '../../context/AuthContext';
@@ -8,13 +8,14 @@ import { useAuth } from '../../context/AuthContext';
 const Navbar: React.FC = () => {
   const [open, setOpen] = useState<boolean>(false);
   const location = useLocation();
-  const { isAuthenticated, user, logout } = useAuth();
+  const { isAuthenticated, user, logout, hasRole } = useAuth();
 
   const navItems = [
     { path: '/',         label: strings.navbar.dashboard, Icon: LayoutDashboard },
     { path: '/projects', label: strings.navbar.projects,  Icon: FolderKanban },
     { path: '/kanban',   label: strings.navbar.kanban,    Icon: Kanban },
     { path: '/team',     label: strings.navbar.team,      Icon: Users },
+    ...(hasRole('admin') ? [{ path: '/admin', label: strings.navbar.admin, Icon: Shield }] : []),
   ];
 
   const isActive = (path: string) =>

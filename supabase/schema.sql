@@ -131,6 +131,11 @@ create policy "Profile can be created for authenticated user"
 create policy "Users can update own profile"
   on public.profiles for update using (auth.uid() = id);
 
+create policy "Admins can update any profile"
+  on public.profiles for update using (
+    exists (select 1 from public.profiles where id = auth.uid() and role = 'admin')
+  );
+
 -- technologies
 create policy "Technologies readable by authenticated"
   on public.technologies for select using (auth.uid() is not null);

@@ -13,12 +13,19 @@ import ProjectsPage from './components/pages/ProjectsPage';
 import ProjectDetailPage from './components/pages/ProjectDetailPage';
 import KanbanPage from './components/pages/KanbanPage';
 import TeamPage from './components/pages/TeamPage';
+import AdminPage from './components/pages/AdminPage';
 import './App.css';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, user } = useAuth();
   if (!isAuthenticated) return <Navigate to="/login" replace />;
   if (user?.role === 'guest') return <Navigate to="/browse" replace />;
+  return <>{children}</>;
+};
+
+const AdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { hasRole } = useAuth();
+  if (!hasRole('admin')) return <Navigate to="/" replace />;
   return <>{children}</>;
 };
 
@@ -38,6 +45,7 @@ const AppRoutes: React.FC = () => {
         <Route path="/projects/:id" element={<ProjectDetailPage />} />
         <Route path="/kanban"       element={<KanbanPage />} />
         <Route path="/team"         element={<TeamPage />} />
+        <Route path="/admin"       element={<AdminRoute><AdminPage /></AdminRoute>} />
       </Route>
 
       {/* Fallback: guests go to browse, authenticated users go home */}

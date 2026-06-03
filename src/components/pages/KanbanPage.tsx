@@ -6,6 +6,7 @@ import { useAuth } from '../../context/AuthContext';
 import { canModifyProject } from '../../lib/permissions';
 import { TaskStatus, Task } from '../../types';
 import Badge from '../ui/Badge';
+import EditTaskModal from '../modals/EditTaskModal';
 import strings from '../ui/strings';
 import './KanbanPage.css';
 
@@ -53,7 +54,7 @@ const AddCardForm: React.FC<AddCardFormProps> = ({ projectId, status, onClose })
       <textarea
         ref={inputRef}
         className="add-card-input"
-        placeholder="Task title…"
+        placeholder={strings.kanban.taskTitlePlaceholder}
         value={title}
         onChange={e => setTitle(e.target.value)}
         onKeyDown={handleKeyDown}
@@ -68,7 +69,7 @@ const AddCardForm: React.FC<AddCardFormProps> = ({ projectId, status, onClose })
         <div className="add-card-actions">
           <button className="add-card-cancel" onClick={onClose} type="button"><X size={12} /></button>
           <button className="add-card-save btn-primary" onClick={handleSubmit} disabled={saving || !title.trim()} type="button">
-            {saving ? '…' : 'Add'}
+            {saving ? '…' : strings.kanban.addTask}
           </button>
         </div>
       </div>
@@ -84,6 +85,8 @@ const KanbanPage: React.FC = () => {
   const [draggingTask, setDraggingTask]     = useState<Task | null>(null);
   const [dragOverColumn, setDragOverColumn] = useState<TaskStatus | null>(null);
   const [addingInCol, setAddingInCol]       = useState<TaskStatus | null>(null);
+  const [editingTask, setEditingTask]       = useState<Task | null>(null);
+  const [didDrag, setDidDrag]               = useState(false);
 
   useEffect(() => {
     const state = location.state as { projectId?: string } | null;
@@ -102,15 +105,25 @@ const KanbanPage: React.FC = () => {
   const getColumnTasks = (status: TaskStatus): Task[] =>
     project?.tasks.filter(t => t.status === status) ?? [];
 
+  const canEdit = project ? canModifyProject(user, project) : false;
+
   const handleDrop = (status: TaskStatus) => {
     if (!canEdit) return;
     if (draggingTask && draggingTask.status !== status && project)
       updateTaskStatus(project.id, draggingTask.id, status);
     setDraggingTask(null);
     setDragOverColumn(null);
+    setDidDrag(true);
   };
 
-  const canEdit = project ? canModifyProject(user, project) : false;
+  const handleCardClick = (task: Task) => {
+    if (!canEdit || didDrag) {
+      setDidDrag(false);
+      return;
+    }
+    setEditingTask(task);
+    setAddingInCol(null);
+  };
 
   return (
     <div className="kanban-page">
@@ -174,14 +187,24 @@ const KanbanPage: React.FC = () => {
                   )}
 
                   {tasks.map(task => {
-                    const assignee = project.members.find(m => m.id === task.assigneeId);
+                    const assignee =
+                      project.members.find(m => m.id === task.assigneeId) ??
+                      (project.coordinator?.id === task.assigneeId ? project.coordinator : undefined);
                     return (
                       <div
                         key={task.id}
-                        className={`kanban-card ${draggingTask?.id === task.id ? 'kanban-card--dragging' : ''}`}
+                        className={`kanban-card ${draggingTask?.id === task.id ? 'kanban-card--dragging' : ''} ${canEdit ? 'kanban-card--editable' : ''}`}
                         draggable={canEdit}
-                        onDragStart={() => canEdit && setDraggingTask(task)}
-                        onDragEnd={() => { setDraggingTask(null); setDragOverColumn(null); }}
+                        onDragStart={() => { if (canEdit) setDraggingTask(task); }}
+                        onDragEnd={() => {
+                          if (draggingTask) setDidDrag(true);
+                          setDraggingTask(null);
+                          setDragOverColumn(null);
+                        }}
+                        onClick={() => handleCardClick(task)}
+                        role={canEdit ? 'button' : undefined}
+                        tabIndex={canEdit ? 0 : undefined}
+                        onKeyDown={e => { if (canEdit && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); handleCardClick(task); } }}
                       >
                         <div className="kanban-card-header">
                           <Badge label={strings.kanban.priority[task.priority]} variant={priorityVariant[task.priority]} />
@@ -210,7 +233,7 @@ const KanbanPage: React.FC = () => {
 
                   {tasks.length === 0 && !isAddingHere && (
                     <div className={`kanban-empty ${dragOverColumn === col.id ? 'kanban-empty--active' : ''}`}>
-                      Drop tasks here
+                      {strings.kanban.dropHere}
                     </div>
                   )}
                 </div>
@@ -218,6 +241,14 @@ const KanbanPage: React.FC = () => {
             );
           })}
         </div>
+      )}
+
+      {editingTask && project && (
+        <EditTaskModal
+          project={project}
+          task={editingTask}
+          onClose={() => setEditingTask(null)}
+        />
       )}
     </div>
   );

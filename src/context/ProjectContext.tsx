@@ -11,6 +11,11 @@ interface ProjectContextType {
   selectProject: (id: string | null) => void;
   fetchProject: (id: string) => Promise<void>;
   updateTaskStatus: (projectId: string, taskId: string, status: TaskStatus) => Promise<void>;
+  updateTask: (
+    projectId: string,
+    taskId: string,
+    updates: Partial<Pick<Task, 'title' | 'description' | 'status' | 'priority' | 'assigneeId' | 'dueDate'>>
+  ) => Promise<void>;
   addProject: (project: Omit<Project, 'id' | 'createdAt' | 'updatedAt' | 'tasks'>) => Promise<Project | null>;
   updateProject: (id: string, updates: Partial<Project>) => Promise<void>;
   deleteProject: (id: string) => Promise<void>;
@@ -182,12 +187,36 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setSelectedProject(prev => prev?.id === id ? null : prev);
   }, []);
 
-  const updateTaskStatus = useCallback(async (projectId: string, taskId: string, status: TaskStatus) => {
-    await supabase.from('tasks').update({ status }).eq('id', taskId);
-    const updater = (t: Task) => t.id === taskId ? { ...t, status, updatedAt: new Date().toISOString() } : t;
+  const patchTaskInState = useCallback((projectId: string, taskId: string, patch: Partial<Task>) => {
+    const updater = (t: Task) =>
+      t.id === taskId ? { ...t, ...patch, updatedAt: new Date().toISOString() } : t;
     setProjects(prev => prev.map(p => p.id !== projectId ? p : { ...p, tasks: p.tasks.map(updater) }));
     setSelectedProject(prev => prev?.id !== projectId ? prev : { ...prev, tasks: prev.tasks.map(updater) });
   }, []);
+
+  const updateTaskStatus = useCallback(async (projectId: string, taskId: string, status: TaskStatus) => {
+    const { error: err } = await supabase.from('tasks').update({ status }).eq('id', taskId);
+    if (err) { setError(err.message); return; }
+    patchTaskInState(projectId, taskId, { status });
+  }, [patchTaskInState]);
+
+  const updateTask = useCallback(async (
+    projectId: string,
+    taskId: string,
+    updates: Partial<Pick<Task, 'title' | 'description' | 'status' | 'priority' | 'assigneeId' | 'dueDate'>>
+  ) => {
+    const dbUpdates: Record<string, unknown> = {};
+    if (updates.title !== undefined) dbUpdates.title = updates.title;
+    if (updates.description !== undefined) dbUpdates.description = updates.description ?? null;
+    if (updates.status !== undefined) dbUpdates.status = updates.status;
+    if (updates.priority !== undefined) dbUpdates.priority = updates.priority;
+    if (updates.assigneeId !== undefined) dbUpdates.assignee_id = updates.assigneeId ?? null;
+    if (updates.dueDate !== undefined) dbUpdates.due_date = updates.dueDate ?? null;
+
+    const { data, error: err } = await supabase.from('tasks').update(dbUpdates).eq('id', taskId).select().single();
+    if (err || !data) { setError(err?.message ?? 'Failed to update task'); throw err ?? new Error('Failed to update task'); }
+    patchTaskInState(projectId, taskId, dbToTask(data as Record<string, unknown>));
+  }, [patchTaskInState]);
 
   const addTask = useCallback(async (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => {
     const { data, error: err } = await supabase.from('tasks').insert({
@@ -217,7 +246,7 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
   return (
     <ProjectContext.Provider value={{
       projects, selectedProject, loading, error,
-      selectProject, fetchProject, updateTaskStatus,
+      selectProject, fetchProject, updateTaskStatus, updateTask,
       addProject, updateProject, deleteProject, addTask,
       addMember, removeMember,
     }}>

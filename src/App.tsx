@@ -16,8 +16,10 @@ import TeamPage from './components/pages/TeamPage';
 import './App.css';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { isAuthenticated } = useAuth();
-  return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />;
+  const { isAuthenticated, user } = useAuth();
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (user?.role === 'guest') return <Navigate to="/browse" replace />;
+  return <>{children}</>;
 };
 
 const AppRoutes: React.FC = () => {

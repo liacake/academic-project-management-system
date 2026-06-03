@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { GripVertical, Plus, X } from 'lucide-react';
 import { useProjects } from '../../context/ProjectContext';
 import { useAuth } from '../../context/AuthContext';
+import { canModifyProject } from '../../lib/permissions';
 import { TaskStatus, Task } from '../../types';
 import Badge from '../ui/Badge';
 import strings from '../ui/strings';
@@ -102,16 +103,14 @@ const KanbanPage: React.FC = () => {
     project?.tasks.filter(t => t.status === status) ?? [];
 
   const handleDrop = (status: TaskStatus) => {
+    if (!canEdit) return;
     if (draggingTask && draggingTask.status !== status && project)
       updateTaskStatus(project.id, draggingTask.id, status);
     setDraggingTask(null);
     setDragOverColumn(null);
   };
 
-  const isOwner = user?.id === project?.ownerId;
-  const isCoordinator = user?.id === project?.coordinatorId;
-  const isMember = project?.members.some(m => m.id === user?.id) ?? false;
-  const canEdit = isOwner || isCoordinator || (!project?.coordinatorId && isMember);
+  const canEdit = project ? canModifyProject(user, project) : false;
 
   return (
     <div className="kanban-page">
@@ -180,8 +179,8 @@ const KanbanPage: React.FC = () => {
                       <div
                         key={task.id}
                         className={`kanban-card ${draggingTask?.id === task.id ? 'kanban-card--dragging' : ''}`}
-                        draggable
-                        onDragStart={() => setDraggingTask(task)}
+                        draggable={canEdit}
+                        onDragStart={() => canEdit && setDraggingTask(task)}
                         onDragEnd={() => { setDraggingTask(null); setDragOverColumn(null); }}
                       >
                         <div className="kanban-card-header">

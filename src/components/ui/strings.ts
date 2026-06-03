@@ -4,6 +4,7 @@ const strings = {
   tagline: 'Organize · Track · Showcase',
   navbar: {
     toggleMenu: 'Toggle navigation menu',
+    browse: 'Browse',
     dashboard: 'Dashboard',
     projects: 'Projects',
     kanban: 'Kanban',

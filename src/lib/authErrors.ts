@@ -2,6 +2,11 @@ import strings from '../components/ui/strings';
 
 export const ALLOWED_EMAIL_DOMAIN = 'esg.ipsantarem.pt';
 
+export function isAllowedSignupEmail(email: string): boolean {
+  const domain = email.trim().toLowerCase().split('@')[1];
+  return domain === ALLOWED_EMAIL_DOMAIN;
+}
+
 function isEmailDomainRestrictionError(message: string): boolean {
   const lower = message.toLowerCase();
   return (

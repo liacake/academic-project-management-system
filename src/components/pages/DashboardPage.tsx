@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { FolderOpen, Play, CheckCircle, Users, ArrowRight } from 'lucide-react';
 import { useProjects } from '../../context/ProjectContext';
 import { useAuth } from '../../context/AuthContext';
+import { canCreateProjects } from '../../lib/permissions';
 import ProjectCard from '../ui/ProjectCard';
 import Badge from '../ui/Badge';
 import strings from '../ui/strings';
@@ -11,6 +12,7 @@ const DashboardPage: React.FC = () => {
   const { projects } = useProjects();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const showCreate = canCreateProjects(user?.role);
 
   const activeProjects    = projects.filter(p => p.status === 'active');
   const completedProjects = projects.filter(p => p.status === 'completed');
@@ -49,9 +51,11 @@ const DashboardPage: React.FC = () => {
           <h1 className="page-title">{strings.dashboard.title}</h1>
           <p className="page-subtitle">Welcome back, <strong>{user?.name}</strong></p>
         </div>
-        <button className="btn-primary" onClick={() => navigate('/projects')}>
-          + {strings.dashboard.newProject}
-        </button>
+        {showCreate && (
+          <button className="btn-primary" onClick={() => navigate('/projects')}>
+            + {strings.dashboard.newProject}
+          </button>
+        )}
       </div>
 
       <div className="stats-grid">

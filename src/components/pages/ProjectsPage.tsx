@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, X, SlidersHorizontal } from 'lucide-react';
 import { useProjects } from '../../context/ProjectContext';
+import { useAuth } from '../../context/AuthContext';
+import { canCreateProjects } from '../../lib/permissions';
 import { ProjectStatus } from '../../types';
 import ProjectCard from '../ui/ProjectCard';
 import strings from '../ui/strings';
@@ -10,7 +12,9 @@ import './ProjectsPage.css';
 
 const ProjectsPage: React.FC = () => {
   const { projects } = useProjects();
+  const { user } = useAuth();
   const navigate = useNavigate();
+  const showCreate = canCreateProjects(user?.role);
   const [search, setSearch]           = useState('');
   const [statusFilter, setStatusFilter] = useState<ProjectStatus | 'all'>('all');
   const [showModal, setShowModal]     = useState(false);
@@ -37,7 +41,9 @@ const ProjectsPage: React.FC = () => {
           <h1 className="page-title">{strings.projects.title}</h1>
           <p className="page-subtitle">{filtered.length} project{filtered.length !== 1 ? 's' : ''}</p>
         </div>
-        <button className="btn-primary" onClick={() => setShowModal(true)}>+ {strings.projects.new}</button>
+        {showCreate && (
+          <button className="btn-primary" onClick={() => setShowModal(true)}>+ {strings.projects.new}</button>
+        )}
       </div>
 
       <div className="projects-toolbar">
@@ -78,7 +84,9 @@ const ProjectsPage: React.FC = () => {
           <div className="empty-icon">📂</div>
           <h3>{strings.projects.noProjects}</h3>
           <p>{strings.projects.noProjectsHint}</p>
-          <button className="btn-primary" onClick={() => setShowModal(true)}>+ {strings.projects.new}</button>
+          {showCreate && (
+            <button className="btn-primary" onClick={() => setShowModal(true)}>+ {strings.projects.new}</button>
+          )}
         </div>
       ) : (
         <div className="projects-grid-full">

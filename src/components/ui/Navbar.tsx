@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, FolderKanban, Kanban, Users, LogOut, Menu, X } from 'lucide-react';
+import { LayoutDashboard, FolderKanban, Kanban, Users, LogOut, Menu, X, Compass } from 'lucide-react';
 import './Navbar.css';
 import strings from './strings';
 import { useAuth } from '../../context/AuthContext';
@@ -17,12 +17,17 @@ const Navbar: React.FC = () => {
     { path: '/team',     label: strings.navbar.team,      Icon: Users },
   ];
 
-  const isActive = (path: string) => location.pathname === path;
+  const isActive = (path: string) =>
+    path === '/browse'
+      ? location.pathname.startsWith('/browse')
+      : location.pathname === path;
+
+  const homePath = isAuthenticated ? '/' : '/browse';
 
   return (
     <nav className="navbar">
       <div className="navbar-container">
-        <Link to="/" className="navbar-brand">
+        <Link to={homePath} className="navbar-brand">
           <div className="navbar-logo-mark"><span>A</span></div>
           <div className="navbar-brand-text">
             <span className="navbar-brand-short">{strings.appName}</span>
@@ -30,22 +35,32 @@ const Navbar: React.FC = () => {
           </div>
         </Link>
 
-        {isAuthenticated && (
-          <ul className={`nav-links ${open ? 'active' : ''}`}>
-            {navItems.map(({ path, label, Icon }) => (
-              <li key={path}>
-                <Link
-                  to={path}
-                  className={`nav-link ${isActive(path) ? 'active' : ''}`}
-                  onClick={() => setOpen(false)}
-                >
-                  <Icon size={15} className="nav-link-icon" />
-                  <span>{label}</span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
+        <ul className={`nav-links ${open ? 'active' : ''}`}>
+          {!isAuthenticated && (
+            <li>
+              <Link
+                to="/browse"
+                className={`nav-link ${isActive('/browse') ? 'active' : ''}`}
+                onClick={() => setOpen(false)}
+              >
+                <Compass size={15} className="nav-link-icon" />
+                <span>{strings.navbar.browse}</span>
+              </Link>
+            </li>
+          )}
+          {isAuthenticated && navItems.map(({ path, label, Icon }) => (
+            <li key={path}>
+              <Link
+                to={path}
+                className={`nav-link ${isActive(path) ? 'active' : ''}`}
+                onClick={() => setOpen(false)}
+              >
+                <Icon size={15} className="nav-link-icon" />
+                <span>{label}</span>
+              </Link>
+            </li>
+          ))}
+        </ul>
 
         <div className="navbar-actions">
           {isAuthenticated ? (

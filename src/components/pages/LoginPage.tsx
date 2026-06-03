@@ -1,6 +1,7 @@
 import { useState, FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { isAllowedSignupEmail } from '../../lib/authErrors';
 import strings from '../ui/strings';
 import './LoginPage.css';
 
@@ -26,6 +27,7 @@ const LoginPage: React.FC = () => {
     setError(''); setSuccess('');
 
     if (mode === 'signup') {
+      if (!isAllowedSignupEmail(email)) { setError(strings.auth.domainNotAllowed); return; }
       if (password !== confirm) { setError('Passwords do not match.'); return; }
       if (password.length < 6) { setError('Password must be at least 6 characters.'); return; }
       setLoading(true);
@@ -78,6 +80,12 @@ const LoginPage: React.FC = () => {
             <input id="email" type="email" value={email} onChange={e => setEmail(e.target.value)}
               placeholder="you@university.edu" required autoComplete="email" />
           </div>
+
+          {mode === 'signup' && (
+            <p className="login-domain-hint">
+              Use your <strong>@esg.ipsantarem.pt</strong> university email to register.
+            </p>
+          )}
 
           {mode === 'signup' && studentIdPreview && (
             <div className="login-student-id-hint">

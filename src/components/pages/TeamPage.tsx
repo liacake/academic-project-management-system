@@ -64,28 +64,27 @@ const TeamPage: React.FC = () => {
   const [selectedProjectId, setSelectedProjectId] = useState('');
   const [search, setSearch] = useState('');
 
+  const canViewAllTeams = user?.role === 'coordinator' || user?.role === 'admin';
+
   const involvedProjects = useMemo(
     () => (user ? projects.filter(p => isInvolvedInProject(p, user.id)) : []),
     [projects, user]
   );
 
+  const baseProjects = canViewAllTeams ? projects : involvedProjects;
+
   const dropdownProjects = useMemo(
-    () => involvedProjects.filter(p => matchesQuery(p, search)),
-    [involvedProjects, search]
+    () => baseProjects.filter(p => matchesQuery(p, search)),
+    [baseProjects, search]
   );
 
-  const searchableProjects = useMemo(
-    () => projects.filter(p => matchesQuery(p, search)),
-    [projects, search]
-  );
-
-  const selectOptions = search.trim() ? searchableProjects : dropdownProjects;
+  const selectOptions = dropdownProjects;
 
   useEffect(() => {
-    if (!selectedProjectId && involvedProjects.length > 0) {
-      setSelectedProjectId(involvedProjects[0].id);
+    if (!selectedProjectId && baseProjects.length > 0) {
+      setSelectedProjectId(baseProjects[0].id);
     }
-  }, [involvedProjects, selectedProjectId]);
+  }, [baseProjects, selectedProjectId]);
 
   useEffect(() => {
     if (selectedProjectId && !selectOptions.some(p => p.id === selectedProjectId)) {
@@ -139,7 +138,7 @@ const TeamPage: React.FC = () => {
         </select>
       </div>
 
-      {involvedProjects.length === 0 && !search.trim() ? (
+      {baseProjects.length === 0 && !search.trim() ? (
         <div className="empty-state">
           <div className="empty-icon">👥</div>
           <h3>{strings.team.noProjects}</h3>

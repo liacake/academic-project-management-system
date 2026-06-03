@@ -1,13 +1,15 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ChevronLeft, Kanban, Github, ExternalLink, Check, UserPlus, Crown, X, Pencil } from 'lucide-react';
+import { ChevronLeft, Kanban, Github, ExternalLink, Check, UserPlus, Crown, X, Pencil, Trash2 } from 'lucide-react';
 import EditProjectModal from '../modals/EditProjectModal';
 import { useProjects } from '../../context/ProjectContext';
 import { useAuth } from '../../context/AuthContext';
+import { canModifyProject, canDeleteProject } from '../../lib/permissions';
 import { useInvites } from '../../context/InviteContext';
 import Badge from '../ui/Badge';
 import UserSearch from '../ui/UserSearch';
 import strings from '../ui/strings';
+import '../modals/Modal.css';
 import './ProjectDetailPage.css';
 
 const statusVariant: Record<string, 'success' | 'default' | 'neutral' | 'warning'> = {
@@ -22,13 +24,15 @@ const priorityVariant: Record<string, 'danger' | 'warning' | 'neutral'> = {
 
 const ProjectDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const { projects, selectedProject, fetchProject, loading, addMember, removeMember } = useProjects();
+  const { projects, selectedProject, fetchProject, loading, addMember, removeMember, deleteProject } = useProjects();
   const { user } = useAuth();
   const { sendInvite } = useInvites();
   const navigate = useNavigate();
 
   const [showAddMember, setShowAddMember] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [showInviteCoord, setShowInviteCoord] = useState(false);
   const [inviteSent, setInviteSent] = useState(false);
   const [addingMemberId, setAddingMemberId] = useState<string | null>(null);
@@ -48,12 +52,15 @@ const ProjectDetailPage: React.FC = () => {
   const completedTasks = project.tasks.filter(t => t.status === 'done').length;
   const progress = project.tasks.length > 0 ? Math.round((completedTasks / project.tasks.length) * 100) : 0;
 
-  // A user can manage the project if: they are owner, or assigned coordinator,
-  // or there's no coordinator and they're a member
-  const isOwner = user?.id === project.ownerId;
-  const isCoordinator = user?.id === project.coordinatorId;
-  const isMember = project.members.some(m => m.id === user?.id);
-  const canManage = isOwner || isCoordinator || (!project.coordinatorId && isMember);
+  const canManage = canModifyProject(user, project);
+  const canDelete = canDeleteProject(user, project);
+
+  const handleDelete = async () => {
+    setDeleting(true);
+    await deleteProject(project.id);
+    setDeleting(false);
+    navigate('/projects');
+  };
 
   const handleAddMember = async (selectedUser: { id: string }) => {
     setAddingMemberId(selectedUser.id);
@@ -105,8 +112,13 @@ const ProjectDetailPage: React.FC = () => {
 
         <div className="detail-actions">
           {canManage && (
-            <button className="btn-secondary" onClick={() => setShowEdit(true)}>
+            <button type="button" className="btn-secondary" onClick={() => setShowEdit(true)}>
               <Pencil size={14} /> Edit
+            </button>
+          )}
+          {canDelete && (
+            <button type="button" className="btn-danger" onClick={() => setShowDeleteConfirm(true)}>
+              <Trash2 size={14} /> {strings.projects.deleteProject}
             </button>
           )}
           <button className="btn-secondary" onClick={() => navigate('/kanban', { state: { projectId: project.id } })}>
@@ -297,6 +309,29 @@ const ProjectDetailPage: React.FC = () => {
         </aside>
       </div>
       {showEdit && <EditProjectModal project={project} onClose={() => setShowEdit(false)} />}
+
+      {showDeleteConfirm && (
+        <div className="modal-overlay" onClick={e => { if (e.target === e.currentTarget && !deleting) setShowDeleteConfirm(false); }}>
+          <div className="modal modal--confirm" role="dialog" aria-labelledby="delete-project-title">
+            <div className="modal-header">
+              <h2 id="delete-project-title">{strings.projects.deleteProject}</h2>
+              <button type="button" className="modal-close" onClick={() => setShowDeleteConfirm(false)} disabled={deleting}>
+                <X size={14} />
+              </button>
+            </div>
+            <p className="modal-confirm-text">{strings.projects.confirmDelete}</p>
+            <p className="modal-confirm-name"><strong>{project.title}</strong></p>
+            <div className="modal-footer">
+              <button type="button" className="btn-cancel" onClick={() => setShowDeleteConfirm(false)} disabled={deleting}>
+                {strings.modal.cancel}
+              </button>
+              <button type="button" className="btn-danger btn-danger--solid" onClick={handleDelete} disabled={deleting}>
+                {deleting ? 'Deleting…' : strings.projects.deleteProject}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -85,7 +85,7 @@ const PublicProjectDetailPage: React.FC = () => {
   if (loading) {
     return (
       <div className="public-detail-page">
-        <p className="public-detail-loading">Loading project…</p>
+        <p className="public-detail-loading">{strings.browse.loadingProject}</p>
       </div>
     );
   }
@@ -94,10 +94,10 @@ const PublicProjectDetailPage: React.FC = () => {
     return (
       <div className="public-detail-page">
         <div className="public-detail-not-found">
-          <h2>Project not found</h2>
-          <p>This project is private or does not exist.</p>
+          <h2>{strings.browse.notFoundTitle}</h2>
+          <p>{strings.browse.notFoundHint}</p>
           <button type="button" className="btn-primary" onClick={() => navigate('/browse')}>
-            ← Back to browse
+            {strings.browse.backToBrowse}
           </button>
         </div>
       </div>
@@ -119,12 +119,12 @@ const PublicProjectDetailPage: React.FC = () => {
           </div>
         </Link>
         <button type="button" className="btn-primary" onClick={() => navigate('/login')}>
-          Sign in
+          {strings.browse.signInCta}
         </button>
       </header>
 
       <button type="button" className="public-detail-back" onClick={() => navigate('/browse')}>
-        <ChevronLeft size={14} /> Back to projects
+        <ChevronLeft size={14} /> {strings.browse.backToProjects}
       </button>
 
       <div className="public-detail-meta">
@@ -141,20 +141,20 @@ const PublicProjectDetailPage: React.FC = () => {
       <div className="public-detail-actions">
         {project.repositoryUrl && (
           <a href={project.repositoryUrl} target="_blank" rel="noopener noreferrer" className="btn-secondary">
-            <Github size={14} /> Repository
+            <Github size={14} /> {strings.projects.repository}
           </a>
         )}
         {project.demoUrl && (
           <a href={project.demoUrl} target="_blank" rel="noopener noreferrer" className="btn-secondary">
-            <ExternalLink size={14} /> Live Demo
+            <ExternalLink size={14} /> {strings.projects.demo}
           </a>
         )}
       </div>
 
       <section className="public-detail-section">
-        <h2>Technologies</h2>
+        <h2>{strings.browse.technologies}</h2>
         {project.technologies.length === 0 ? (
-          <p className="public-detail-muted">No technologies listed.</p>
+          <p className="public-detail-muted">{strings.browse.noTechnologies}</p>
         ) : (
           <div className="public-detail-techs">
             {project.technologies.map(t => (
@@ -171,20 +171,25 @@ const PublicProjectDetailPage: React.FC = () => {
       <section className="public-detail-section public-detail-stats">
         <div className="public-detail-stat">
           <span className="public-detail-stat-value">{project.memberCount}</span>
-          <span className="public-detail-stat-label">Team members</span>
+          <span className="public-detail-stat-label">{strings.browse.teamMembers}</span>
         </div>
         {project.taskCount > 0 && (
           <div className="public-detail-stat">
             <span className="public-detail-stat-value">{progress}%</span>
             <span className="public-detail-stat-label">
-              Tasks complete ({project.completedTasks}/{project.taskCount})
+              {strings.browse.tasksComplete} ({project.completedTasks}/{project.taskCount})
             </span>
           </div>
         )}
       </section>
 
       <footer className="public-detail-footer">
-        <p>Want to manage your own projects? <button type="button" className="browse-link" onClick={() => navigate('/login')}>Sign in or create an account</button></p>
+        <p>
+          {strings.browse.manageFooter}{' '}
+          <button type="button" className="browse-link" onClick={() => navigate('/login')}>
+            {strings.browse.signInOrCreate}
+          </button>
+        </p>
       </footer>
     </div>
   );

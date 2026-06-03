@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Search, X } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import Badge from '../ui/Badge';
+import strings from '../ui/strings';
 import './BrowsePage.css';
 
 interface PublicProject {
@@ -70,11 +71,11 @@ const BrowsePage: React.FC = () => {
         <div className="browse-brand">
           <div className="browse-logo">A</div>
           <div>
-            <h1 className="browse-title">Academic Projects</h1>
-            <p className="browse-subtitle">Student Digital Career Ecosystem</p>
+            <h1 className="browse-title">{strings.browse.title}</h1>
+            <p className="browse-subtitle">{strings.browse.subtitle}</p>
           </div>
         </div>
-        <button className="btn-primary" onClick={() => navigate('/login')}>Sign in</button>
+        <button className="btn-primary" onClick={() => navigate('/login')}>{strings.browse.signInCta}</button>
       </div>
 
       <div className="browse-search-wrap">
@@ -82,7 +83,7 @@ const BrowsePage: React.FC = () => {
         <input
           className="browse-search-input"
           type="text"
-          placeholder="Search projects or technologies…"
+          placeholder={strings.browse.searchPlaceholder}
           value={search}
           onChange={e => setSearch(e.target.value)}
         />
@@ -90,9 +91,9 @@ const BrowsePage: React.FC = () => {
       </div>
 
       {loading ? (
-        <div className="browse-loading">Loading projects…</div>
+        <div className="browse-loading">{strings.browse.loading}</div>
       ) : filtered.length === 0 ? (
-        <div className="browse-empty">No public projects found.</div>
+        <div className="browse-empty">{strings.browse.empty}</div>
       ) : (
         <div className="browse-grid">
           {filtered.map(p => (
@@ -113,9 +114,11 @@ const BrowsePage: React.FC = () => {
                 )}
               </div>
               <div className="browse-card-footer">
-                <span className="browse-card-meta">{p.memberCount} member{p.memberCount !== 1 ? 's' : ''}</span>
+                <span className="browse-card-meta">
+                  {p.memberCount} {p.memberCount !== 1 ? strings.browse.members : strings.browse.member}
+                </span>
                 {p.semester && p.year && <span className="browse-card-meta">{p.semester} {p.year}</span>}
-                <span className="browse-card-cta">View details →</span>
+                <span className="browse-card-cta">{strings.browse.viewDetailsCta}</span>
               </div>
             </div>
           ))}
@@ -123,7 +126,12 @@ const BrowsePage: React.FC = () => {
       )}
 
       <div className="browse-footer">
-        <p>Want to add your projects? <button className="browse-link" onClick={() => navigate('/login')}>Create an account</button></p>
+        <p>
+          {strings.browse.footer}{' '}
+          <button type="button" className="browse-link" onClick={() => navigate('/login')}>
+            {strings.browse.createAccount}
+          </button>
+        </p>
       </div>
     </div>
   );

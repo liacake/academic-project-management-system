@@ -173,6 +173,11 @@ create policy "Project owners can delete their projects"
   on public.projects for delete
   using (auth.uid() = owner_id);
 
+create policy "Admins can delete any project"
+  on public.projects for delete using (
+    exists (select 1 from public.profiles where id = auth.uid() and role = 'admin')
+  );
+
 -- project_technologies
 create policy "Project technologies readable by authenticated"
   on public.project_technologies for select using (auth.uid() is not null);

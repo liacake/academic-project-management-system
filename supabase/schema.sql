@@ -156,6 +156,11 @@ create policy "Project members can view their projects"
   on public.projects for select
   using (public.is_project_member(id));
 
+create policy "Coordinators and admins can view all projects"
+  on public.projects for select using (
+    exists (select 1 from public.profiles where id = auth.uid() and role in ('coordinator', 'admin'))
+  );
+
 create policy "Authenticated users can create projects"
   on public.projects for insert
   with check (auth.uid() = owner_id);
@@ -192,6 +197,11 @@ create policy "Tasks readable by project viewers"
       where p.id = project_id
         and (p.is_public = true or p.owner_id = auth.uid() or public.is_project_member(p.id))
     )
+  );
+
+create policy "Coordinators and admins can view all tasks"
+  on public.tasks for select using (
+    exists (select 1 from public.profiles where id = auth.uid() and role in ('coordinator', 'admin'))
   );
 
 create policy "Members can insert tasks"

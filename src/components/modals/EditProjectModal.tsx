@@ -1,7 +1,8 @@
 import { useState, FormEvent } from 'react';
 import { X } from 'lucide-react';
 import { useProjects } from '../../context/ProjectContext';
-import { Project, ProjectStatus } from '../../types';
+import { useTechnologies } from '../../context/TechnologyContext';
+import { Project, ProjectStatus, Technology } from '../../types';
 import strings from '../ui/strings';
 import './Modal.css';
 
@@ -9,10 +10,12 @@ interface EditProjectModalProps { project: Project; onClose: () => void; }
 
 const EditProjectModal: React.FC<EditProjectModalProps> = ({ project, onClose }) => {
   const { updateProject } = useProjects();
+  const { technologies } = useTechnologies();
 
   const [title, setTitle]             = useState(project.title);
   const [description, setDescription] = useState(project.description);
   const [status, setStatus]           = useState<ProjectStatus>(project.status);
+  const [selectedTechs, setSelectedTechs] = useState<Technology[]>(project.technologies);
   const [semester, setSemester]       = useState(project.semester ?? '');
   const [year, setYear]               = useState<number>(project.year ?? new Date().getFullYear());
   const [repositoryUrl, setRepositoryUrl] = useState(project.repositoryUrl ?? '');
@@ -21,12 +24,18 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({ project, onClose })
   const [saving, setSaving]           = useState(false);
   const [error, setError]             = useState('');
 
+  const toggleTech = (tech: Technology) =>
+    setSelectedTechs(prev =>
+      prev.find(t => t.id === tech.id) ? prev.filter(t => t.id !== tech.id) : [...prev, tech]
+    );
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setSaving(true); setError('');
     try {
       await updateProject(project.id, {
         title, description, status,
+        technologies: selectedTechs,
         semester: semester || undefined,
         year,
         repositoryUrl: repositoryUrl || undefined,
@@ -44,8 +53,8 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({ project, onClose })
     <div className="modal-overlay" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="modal">
         <div className="modal-header">
-          <h2>Edit Project</h2>
-          <button className="modal-close" onClick={onClose}><X size={14} /></button>
+          <h2>{strings.modal.editProject}</h2>
+          <button type="button" className="modal-close" onClick={onClose}><X size={14} /></button>
         </div>
 
         <form className="modal-form" onSubmit={handleSubmit}>
@@ -56,7 +65,7 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({ project, onClose })
             </div>
             <div className="form-group">
               <label>{strings.modal.descriptionLabel}</label>
-              <textarea value={description} onChange={e => setDescription(e.target.value)} rows={3} />
+              <textarea value={description} onChange={e => setDescription(e.target.value)} rows={3} required />
             </div>
             <div className="form-row">
               <div className="form-group">
@@ -70,9 +79,22 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({ project, onClose })
               <div className="form-group">
                 <label>{strings.modal.visibilityLabel}</label>
                 <select value={isPublic ? 'public' : 'private'} onChange={e => setIsPublic(e.target.value === 'public')}>
-                  <option value="public">Public</option>
-                  <option value="private">Private</option>
+                  <option value="public">{strings.projects.public}</option>
+                  <option value="private">{strings.projects.private}</option>
                 </select>
+              </div>
+            </div>
+            <div className="form-group">
+              <label>{strings.modal.technologiesLabel}</label>
+              <div className="tech-picker">
+                {technologies.map(tech => (
+                  <button key={tech.id} type="button"
+                    className={`tech-pick-btn ${selectedTechs.find(t => t.id === tech.id) ? 'selected' : ''}`}
+                    style={selectedTechs.find(t => t.id === tech.id) ? { borderColor: tech.color, background: `${tech.color}22`, color: tech.color } : {}}
+                    onClick={() => toggleTech(tech)}>
+                    {tech.name}
+                  </button>
+                ))}
               </div>
             </div>
             <div className="form-row">
@@ -105,7 +127,7 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({ project, onClose })
           </div>
           <div className="modal-footer">
             <button type="button" className="btn-cancel" onClick={onClose}>{strings.modal.cancel}</button>
-            <button type="submit" className="btn-primary" disabled={saving}>{saving ? 'Saving…' : 'Save changes'}</button>
+            <button type="submit" className="btn-primary" disabled={saving}>{saving ? 'Saving…' : strings.modal.save}</button>
           </div>
         </form>
       </div>

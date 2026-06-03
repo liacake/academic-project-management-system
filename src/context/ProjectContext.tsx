@@ -156,9 +156,25 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     if (updates.demoUrl     !== undefined) dbUpdates.demo_url       = updates.demoUrl;
     if (updates.isPublic    !== undefined) dbUpdates.is_public      = updates.isPublic;
     if (updates.coordinatorId !== undefined) dbUpdates.coordinator_id = updates.coordinatorId ?? null;
-    await supabase.from('projects').update(dbUpdates).eq('id', id);
+
+    if (Object.keys(dbUpdates).length > 0) {
+      const { error: err } = await supabase.from('projects').update(dbUpdates).eq('id', id);
+      if (err) throw err;
+    }
+
+    if (updates.technologies !== undefined) {
+      await supabase.from('project_technologies').delete().eq('project_id', id);
+      if (updates.technologies.length > 0) {
+        const { error: err } = await supabase.from('project_technologies').insert(
+          updates.technologies.map(t => ({ project_id: id, technology_id: t.id }))
+        );
+        if (err) throw err;
+      }
+    }
+
     await fetchProjects();
-  }, [fetchProjects]);
+    await fetchProject(id);
+  }, [fetchProjects, fetchProject]);
 
   const deleteProject = useCallback(async (id: string) => {
     await supabase.from('projects').delete().eq('id', id);

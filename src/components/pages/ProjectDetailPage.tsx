@@ -179,8 +179,22 @@ const ProjectDetailPage: React.FC = () => {
               <div className="tasks-list">
                 {project.tasks.map(task => {
                   const assignee = project.members.find(m => m.id === task.assigneeId);
+                  const openInKanban = () =>
+                    navigate('/kanban', { state: { projectId: project.id, taskId: task.id } });
                   return (
-                    <div key={task.id} className={`task-row ${task.status === 'done' ? 'task-row--done' : ''}`}>
+                    <div
+                      key={task.id}
+                      className={`task-row task-row--clickable ${task.status === 'done' ? 'task-row--done' : ''}`}
+                      role="button"
+                      tabIndex={0}
+                      onClick={openInKanban}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          openInKanban();
+                        }
+                      }}
+                    >
                       <div className="task-row-left">
                         <div className={`task-check ${task.status === 'done' ? 'checked' : ''}`}>
                           {task.status === 'done' && <Check size={10} />}
@@ -192,7 +206,12 @@ const ProjectDetailPage: React.FC = () => {
                       </div>
                       <div className="task-row-right">
                         {assignee && (
-                          <UserLink userId={assignee.id} className="task-assignee" title={assignee.name}>
+                          <UserLink
+                            userId={assignee.id}
+                            className="task-assignee"
+                            title={assignee.name}
+                            onClick={e => e.stopPropagation()}
+                          >
                             {assignee.name.charAt(0)}
                           </UserLink>
                         )}

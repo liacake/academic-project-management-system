@@ -65,7 +65,9 @@
 
 .tasks-list { display: flex; flex-direction: column; gap: 0.4rem; }
 .task-row { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; padding: 0.55rem 0.7rem; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; flex-wrap: wrap; transition: border-color 0.1s; }
-.task-row:hover { border-color: var(--border); }
+.task-row--clickable { cursor: pointer; }
+.task-row--clickable:hover { border-color: var(--accent); background: var(--accent-bg, var(--surface)); }
+.task-row--clickable:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .task-row--done { opacity: 0.55; }
 
 .task-row-left { display: flex; align-items: flex-start; gap: 0.5rem; flex: 1; min-width: 0; }

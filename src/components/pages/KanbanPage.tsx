@@ -4,10 +4,11 @@ import { GripVertical, Plus, X } from 'lucide-react';
 import { useProjects } from '../../context/ProjectContext';
 import { useAuth } from '../../context/AuthContext';
 import { canModifyProject } from '../../lib/permissions';
+import { useMediaQuery } from '../../lib/useMediaQuery';
 import { TaskStatus, Task } from '../../types';
 import Badge from '../ui/Badge';
 import UserLink from '../ui/UserLink';
-import EditTaskModal from '../modals/EditTaskModal';
+import TaskPanel from '../tasks/TaskPanel';
 import strings from '../ui/strings';
 import './KanbanPage.css';
 
@@ -82,26 +83,30 @@ const KanbanPage: React.FC = () => {
   const { projects, selectedProject, fetchProject, updateTaskStatus } = useProjects();
   const { user } = useAuth();
   const location = useLocation();
+  const isMobile = useMediaQuery('(max-width: 768px)');
   const [selectedProjectId, setSelectedProjectId] = useState<string>('');
+  const [selectedTaskId, setSelectedTaskId]       = useState<string>('');
   const [draggingTask, setDraggingTask]     = useState<Task | null>(null);
   const [dragOverColumn, setDragOverColumn] = useState<TaskStatus | null>(null);
   const [addingInCol, setAddingInCol]       = useState<TaskStatus | null>(null);
-  const [editingTask, setEditingTask]       = useState<Task | null>(null);
   const [didDrag, setDidDrag]               = useState(false);
 
   useEffect(() => {
-    const state = location.state as { projectId?: string } | null;
+    const state = location.state as { projectId?: string; taskId?: string } | null;
     if (state?.projectId) setSelectedProjectId(state.projectId);
     else if (projects.length > 0 && !selectedProjectId) setSelectedProjectId(projects[0].id);
+    if (state?.taskId) setSelectedTaskId(state.taskId);
   }, [location.state, projects]);
 
   useEffect(() => {
     if (selectedProjectId) fetchProject(selectedProjectId);
-  }, [selectedProjectId]);
+  }, [selectedProjectId, fetchProject]);
 
   const project = selectedProject?.id === selectedProjectId
     ? selectedProject
     : projects.find(p => p.id === selectedProjectId);
+
+  const selectedTask = project?.tasks.find(t => t.id === selectedTaskId) ?? null;
 
   const getColumnTasks = (status: TaskStatus): Task[] =>
     project?.tasks.filter(t => t.status === status) ?? [];
@@ -117,24 +122,44 @@ const KanbanPage: React.FC = () => {
     setDidDrag(true);
   };
 
-  const handleCardClick = (task: Task) => {
-    if (!canEdit || didDrag) {
+  const openTask = (task: Task) => {
+    if (didDrag) {
       setDidDrag(false);
       return;
     }
-    setEditingTask(task);
+    setSelectedTaskId(task.id);
     setAddingInCol(null);
   };
 
+  const closeTaskPanel = () => setSelectedTaskId('');
+
+  const handleProjectChange = (projectId: string) => {
+    setSelectedProjectId(projectId);
+    setSelectedTaskId('');
+    setAddingInCol(null);
+  };
+
+  const taskPanel = selectedTask && project ? (
+    <TaskPanel
+      project={project}
+      task={selectedTask}
+      canEdit={canEdit}
+      onClose={closeTaskPanel}
+    />
+  ) : null;
+
   return (
-    <div className="kanban-page">
+    <div className={`kanban-page ${selectedTask ? 'kanban-page--task-open' : ''}`}>
       <div className="page-header">
         <div>
           <h1 className="page-title">{strings.kanban.title}</h1>
           <p className="page-subtitle">{strings.kanban.subtitle}</p>
         </div>
-        <select className="filter-select" value={selectedProjectId}
-          onChange={e => { setSelectedProjectId(e.target.value); setAddingInCol(null); }}>
+        <select
+          className="filter-select"
+          value={selectedProjectId}
+          onChange={e => handleProjectChange(e.target.value)}
+        >
           <option value="">Select a project...</option>
           {projects.map(p => <option key={p.id} value={p.id}>{p.title}</option>)}
         </select>
@@ -146,110 +171,131 @@ const KanbanPage: React.FC = () => {
           <h3>{strings.kanban.selectProject}</h3>
         </div>
       ) : (
-        <div className="kanban-board">
-          {columns.map(col => {
-            const tasks = getColumnTasks(col.id);
-            const isAddingHere = addingInCol === col.id;
+        <div className="kanban-layout">
+          <div className="kanban-board">
+            {columns.map(col => {
+              const tasks = getColumnTasks(col.id);
+              const isAddingHere = addingInCol === col.id;
 
-            return (
-              <div
-                key={col.id}
-                className={`kanban-column ${dragOverColumn === col.id ? 'kanban-column--over' : ''}`}
-                onDragOver={e => { e.preventDefault(); setDragOverColumn(col.id); }}
-                onDragLeave={() => setDragOverColumn(null)}
-                onDrop={() => handleDrop(col.id)}
-              >
-                <div className="kanban-column-header">
-                  <div className="kanban-column-title">
-                    <span className="kanban-col-dot" style={{ background: col.color }} />
-                    <span>{col.label}</span>
+              return (
+                <div
+                  key={col.id}
+                  className={`kanban-column ${dragOverColumn === col.id ? 'kanban-column--over' : ''}`}
+                  onDragOver={e => { e.preventDefault(); setDragOverColumn(col.id); }}
+                  onDragLeave={() => setDragOverColumn(null)}
+                  onDrop={() => handleDrop(col.id)}
+                >
+                  <div className="kanban-column-header">
+                    <div className="kanban-column-title">
+                      <span className="kanban-col-dot" style={{ background: col.color }} />
+                      <span>{col.label}</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                      <span className="kanban-count">{tasks.length}</span>
+                      {canEdit && (
+                        <button
+                          className="kanban-add-btn"
+                          title="Add task"
+                          onClick={() => setAddingInCol(isAddingHere ? null : col.id)}
+                        >
+                          <Plus size={12} />
+                        </button>
+                      )}
+                    </div>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                    <span className="kanban-count">{tasks.length}</span>
-                    {canEdit && (
-                      <button
-                        className="kanban-add-btn"
-                        title="Add task"
-                        onClick={() => setAddingInCol(isAddingHere ? null : col.id)}
-                      >
-                        <Plus size={12} />
-                      </button>
+
+                  <div className="kanban-cards">
+                    {isAddingHere && (
+                      <AddCardForm
+                        projectId={project.id}
+                        status={col.id}
+                        onClose={() => setAddingInCol(null)}
+                      />
+                    )}
+
+                    {tasks.map(task => {
+                      const assignee =
+                        project.members.find(m => m.id === task.assigneeId) ??
+                        (project.coordinator?.id === task.assigneeId ? project.coordinator : undefined);
+                      const isSelected = selectedTaskId === task.id;
+                      return (
+                        <div
+                          key={task.id}
+                          className={`kanban-card kanban-card--clickable ${isSelected ? 'kanban-card--selected' : ''} ${draggingTask?.id === task.id ? 'kanban-card--dragging' : ''}`}
+                          draggable={canEdit}
+                          onDragStart={() => { if (canEdit) setDraggingTask(task); }}
+                          onDragEnd={() => {
+                            if (draggingTask) setDidDrag(true);
+                            setDraggingTask(null);
+                            setDragOverColumn(null);
+                          }}
+                          onClick={() => openTask(task)}
+                          role="button"
+                          tabIndex={0}
+                          onKeyDown={e => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              openTask(task);
+                            }
+                          }}
+                        >
+                          <div className="kanban-card-header">
+                            <Badge label={strings.kanban.priority[task.priority]} variant={priorityVariant[task.priority]} />
+                            {task.dueDate && (
+                              <span className="kanban-due">
+                                {new Date(task.dueDate).toLocaleDateString('en', { month: 'short', day: 'numeric' })}
+                              </span>
+                            )}
+                          </div>
+                          <p className="kanban-card-title">{task.title}</p>
+                          {task.description && <p className="kanban-card-desc">{task.description}</p>}
+                          <div className="kanban-card-footer">
+                            {assignee ? (
+                              <UserLink
+                                userId={assignee.id}
+                                className="kanban-assignee"
+                                onClick={e => e.stopPropagation()}
+                              >
+                                <div className="kanban-assignee-avatar">{assignee.name.charAt(0)}</div>
+                                <span>{assignee.name.split(' ')[0]}</span>
+                              </UserLink>
+                            ) : (
+                              <span className="kanban-unassigned">{strings.kanban.unassigned}</span>
+                            )}
+                            {canEdit && <GripVertical size={13} className="kanban-drag-handle" />}
+                          </div>
+                        </div>
+                      );
+                    })}
+
+                    {tasks.length === 0 && !isAddingHere && (
+                      <div className={`kanban-empty ${dragOverColumn === col.id ? 'kanban-empty--active' : ''}`}>
+                        {strings.kanban.dropHere}
+                      </div>
                     )}
                   </div>
                 </div>
+              );
+            })}
+          </div>
 
-                <div className="kanban-cards">
-                  {isAddingHere && (
-                    <AddCardForm
-                      projectId={project.id}
-                      status={col.id}
-                      onClose={() => setAddingInCol(null)}
-                    />
-                  )}
-
-                  {tasks.map(task => {
-                    const assignee =
-                      project.members.find(m => m.id === task.assigneeId) ??
-                      (project.coordinator?.id === task.assigneeId ? project.coordinator : undefined);
-                    return (
-                      <div
-                        key={task.id}
-                        className={`kanban-card ${draggingTask?.id === task.id ? 'kanban-card--dragging' : ''} ${canEdit ? 'kanban-card--editable' : ''}`}
-                        draggable={canEdit}
-                        onDragStart={() => { if (canEdit) setDraggingTask(task); }}
-                        onDragEnd={() => {
-                          if (draggingTask) setDidDrag(true);
-                          setDraggingTask(null);
-                          setDragOverColumn(null);
-                        }}
-                        onClick={() => handleCardClick(task)}
-                        role={canEdit ? 'button' : undefined}
-                        tabIndex={canEdit ? 0 : undefined}
-                        onKeyDown={e => { if (canEdit && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); handleCardClick(task); } }}
-                      >
-                        <div className="kanban-card-header">
-                          <Badge label={strings.kanban.priority[task.priority]} variant={priorityVariant[task.priority]} />
-                          {task.dueDate && (
-                            <span className="kanban-due">
-                              {new Date(task.dueDate).toLocaleDateString('en', { month: 'short', day: 'numeric' })}
-                            </span>
-                          )}
-                        </div>
-                        <p className="kanban-card-title">{task.title}</p>
-                        {task.description && <p className="kanban-card-desc">{task.description}</p>}
-                        <div className="kanban-card-footer">
-                          {assignee ? (
-                            <UserLink userId={assignee.id} className="kanban-assignee">
-                              <div className="kanban-assignee-avatar">{assignee.name.charAt(0)}</div>
-                              <span>{assignee.name.split(' ')[0]}</span>
-                            </UserLink>
-                          ) : (
-                            <span className="kanban-unassigned">{strings.kanban.unassigned}</span>
-                          )}
-                          <GripVertical size={13} className="kanban-drag-handle" />
-                        </div>
-                      </div>
-                    );
-                  })}
-
-                  {tasks.length === 0 && !isAddingHere && (
-                    <div className={`kanban-empty ${dragOverColumn === col.id ? 'kanban-empty--active' : ''}`}>
-                      {strings.kanban.dropHere}
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })}
+          {taskPanel && !isMobile && (
+            <aside className="kanban-task-sidebar" aria-label={strings.kanban.viewTask}>
+              {taskPanel}
+            </aside>
+          )}
         </div>
       )}
 
-      {editingTask && project && (
-        <EditTaskModal
-          project={project}
-          task={editingTask}
-          onClose={() => setEditingTask(null)}
-        />
+      {taskPanel && isMobile && (
+        <div
+          className="modal-overlay kanban-task-modal"
+          onClick={e => { if (e.target === e.currentTarget) closeTaskPanel(); }}
+        >
+          <div className="modal" onClick={e => e.stopPropagation()}>
+            {taskPanel}
+          </div>
+        </div>
       )}
     </div>
   );

@@ -62,6 +62,8 @@ function dbToProject(p: Record<string, unknown>, techs: Technology[], members: U
     coordinator: coordinatorRaw ? dbToUser(coordinatorRaw) : undefined,
     semester: (p.semester ?? undefined) as string | undefined,
     year: (p.year ?? undefined) as number | undefined,
+    startDate: (p.start_date ?? undefined) as string | undefined,
+    endDate: (p.end_date ?? undefined) as string | undefined,
     repositoryUrl: (p.repository_url ?? undefined) as string | undefined,
     demoUrl: (p.demo_url ?? undefined) as string | undefined,
     thumbnail: (p.thumbnail ?? undefined) as string | undefined,
@@ -136,6 +138,7 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const { data: proj, error: err } = await supabase.from('projects').insert({
       title: project.title, description: project.description, status: project.status,
       owner_id: project.ownerId, semester: project.semester ?? null, year: project.year ?? null,
+      start_date: project.startDate ?? null, end_date: project.endDate ?? null,
       repository_url: project.repositoryUrl ?? null, demo_url: project.demoUrl ?? null, is_public: project.isPublic,
     }).select().single();
 
@@ -157,6 +160,8 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     if (updates.status      !== undefined) dbUpdates.status         = updates.status;
     if (updates.semester    !== undefined) dbUpdates.semester       = updates.semester;
     if (updates.year        !== undefined) dbUpdates.year           = updates.year;
+    if (updates.startDate   !== undefined) dbUpdates.start_date    = updates.startDate ?? null;
+    if (updates.endDate     !== undefined) dbUpdates.end_date      = updates.endDate ?? null;
     if (updates.repositoryUrl !== undefined) dbUpdates.repository_url = updates.repositoryUrl;
     if (updates.demoUrl     !== undefined) dbUpdates.demo_url       = updates.demoUrl;
     if (updates.isPublic    !== undefined) dbUpdates.is_public      = updates.isPublic;

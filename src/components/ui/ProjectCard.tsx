@@ -2,6 +2,7 @@ import { Github, ExternalLink } from 'lucide-react';
 import { Project } from '../../types';
 import Badge from './Badge';
 import './ProjectCard.css';
+import { formatProjectDateRange } from '../../lib/dates';
 import strings from './strings';
 
 interface ProjectCardProps {
@@ -17,6 +18,9 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onClick }) => {
   const completedTasks = project.tasks.filter(t => t.status === 'done').length;
   const totalTasks = project.tasks.length;
   const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+  const timeline =
+    formatProjectDateRange(project.startDate, project.endDate) ||
+    (project.semester && project.year ? `${project.semester} ${project.year}` : '');
 
   return (
     <div className="project-card" onClick={onClick} role="button" tabIndex={0}
@@ -26,9 +30,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onClick }) => {
           <Badge label={strings.projects.status[project.status]} variant={statusVariant[project.status]} />
           <Badge label={project.isPublic ? strings.projects.public : strings.projects.private} variant="neutral" />
         </div>
-        <div className="project-card-semester">
-          {project.semester && project.year ? `${project.semester} ${project.year}` : ''}
-        </div>
+        <div className="project-card-semester">{timeline}</div>
       </div>
 
       <h3 className="project-card-title">{project.title}</h3>

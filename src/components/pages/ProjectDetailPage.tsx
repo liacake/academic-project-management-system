@@ -8,6 +8,7 @@ import { canModifyProject, canDeleteProject } from '../../lib/permissions';
 import { useInvites } from '../../context/InviteContext';
 import Badge from '../ui/Badge';
 import UserSearch from '../ui/UserSearch';
+import { formatProjectDate, formatProjectDateRange } from '../../lib/dates';
 import strings from '../ui/strings';
 import '../modals/Modal.css';
 import './ProjectDetailPage.css';
@@ -101,6 +102,9 @@ const ProjectDetailPage: React.FC = () => {
             )}
             {!project.coordinator && (
               <span className="detail-coord-badge detail-coord-badge--none">No coordinator</span>
+            )}
+            {formatProjectDateRange(project.startDate, project.endDate) && (
+              <span className="detail-semester">{formatProjectDateRange(project.startDate, project.endDate)}</span>
             )}
             {project.semester && project.year && (
               <span className="detail-semester">{project.semester} {project.year}</span>
@@ -294,6 +298,8 @@ const ProjectDetailPage: React.FC = () => {
               {[
                 ['Created', new Date(project.createdAt).toLocaleDateString('en', { year:'numeric', month:'short', day:'numeric' })],
                 ['Updated', new Date(project.updatedAt).toLocaleDateString('en', { year:'numeric', month:'short', day:'numeric' })],
+                ...(project.startDate ? [[strings.projects.startDate, formatProjectDate(project.startDate)]] : []),
+                ...(project.endDate ? [[strings.projects.endDate, formatProjectDate(project.endDate)]] : []),
                 ...(project.semester ? [['Semester', `${project.semester} ${project.year}`]] : []),
                 ['Visibility', project.isPublic ? 'Public' : 'Private'],
                 ['Members', String(project.members.length)],

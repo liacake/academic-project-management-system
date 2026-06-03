@@ -5,6 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useTechnologies } from '../../context/TechnologyContext';
 import { useTeam } from '../../context/TeamContext';
 import { ProjectStatus, Technology, User } from '../../types';
+import { isValidProjectDateRange } from '../../lib/dates';
 import strings from '../ui/strings';
 import './Modal.css';
 
@@ -23,6 +24,8 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ onClose }) => {
   const [selectedMembers, setSelectedMembers] = useState<User[]>(user ? [user as User] : []);
   const [semester, setSemester]         = useState('');
   const [year, setYear]                 = useState<number>(new Date().getFullYear());
+  const [startDate, setStartDate]       = useState('');
+  const [endDate, setEndDate]           = useState('');
   const [repositoryUrl, setRepositoryUrl] = useState('');
   const [demoUrl, setDemoUrl]           = useState('');
   const [isPublic, setIsPublic]         = useState(true);
@@ -37,6 +40,10 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ onClose }) => {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    if (!isValidProjectDateRange(startDate || undefined, endDate || undefined)) {
+      setError(strings.modal.invalidDateRange);
+      return;
+    }
     setSaving(true);
     setError('');
     const result = await addProject({
@@ -46,6 +53,8 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ onClose }) => {
       ownerId: user?.id || '',
       semester: semester || undefined,
       year,
+      startDate: startDate || undefined,
+      endDate: endDate || undefined,
       repositoryUrl: repositoryUrl || undefined,
       demoUrl: demoUrl || undefined,
       isPublic,
@@ -89,6 +98,16 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ onClose }) => {
                   <option value="public">Public</option>
                   <option value="private">Private</option>
                 </select>
+              </div>
+            </div>
+            <div className="form-row">
+              <div className="form-group">
+                <label>{strings.modal.startDateLabel}</label>
+                <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
+              </div>
+              <div className="form-group">
+                <label>{strings.modal.endDateLabel}</label>
+                <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} min={startDate || undefined} />
               </div>
             </div>
             <div className="form-row">

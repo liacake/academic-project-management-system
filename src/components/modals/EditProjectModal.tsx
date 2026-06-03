@@ -3,6 +3,7 @@ import { X } from 'lucide-react';
 import { useProjects } from '../../context/ProjectContext';
 import { useTechnologies } from '../../context/TechnologyContext';
 import { Project, ProjectStatus, Technology } from '../../types';
+import { isValidProjectDateRange } from '../../lib/dates';
 import strings from '../ui/strings';
 import './Modal.css';
 
@@ -18,6 +19,8 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({ project, onClose })
   const [selectedTechs, setSelectedTechs] = useState<Technology[]>(project.technologies);
   const [semester, setSemester]       = useState(project.semester ?? '');
   const [year, setYear]               = useState<number>(project.year ?? new Date().getFullYear());
+  const [startDate, setStartDate]     = useState(project.startDate ?? '');
+  const [endDate, setEndDate]         = useState(project.endDate ?? '');
   const [repositoryUrl, setRepositoryUrl] = useState(project.repositoryUrl ?? '');
   const [demoUrl, setDemoUrl]         = useState(project.demoUrl ?? '');
   const [isPublic, setIsPublic]       = useState(project.isPublic);
@@ -31,6 +34,10 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({ project, onClose })
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    if (!isValidProjectDateRange(startDate || undefined, endDate || undefined)) {
+      setError(strings.modal.invalidDateRange);
+      return;
+    }
     setSaving(true); setError('');
     try {
       await updateProject(project.id, {
@@ -38,6 +45,8 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({ project, onClose })
         technologies: selectedTechs,
         semester: semester || undefined,
         year,
+        startDate: startDate || undefined,
+        endDate: endDate || undefined,
         repositoryUrl: repositoryUrl || undefined,
         demoUrl: demoUrl || undefined,
         isPublic,
@@ -95,6 +104,16 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({ project, onClose })
                     {tech.name}
                   </button>
                 ))}
+              </div>
+            </div>
+            <div className="form-row">
+              <div className="form-group">
+                <label>{strings.modal.startDateLabel}</label>
+                <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
+              </div>
+              <div className="form-group">
+                <label>{strings.modal.endDateLabel}</label>
+                <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} min={startDate || undefined} />
               </div>
             </div>
             <div className="form-row">

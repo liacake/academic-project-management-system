@@ -56,6 +56,8 @@ export interface Project {
   coordinator?: User;
   semester?: string;
   year?: number;
+  startDate?: string;
+  endDate?: string;
   repositoryUrl?: string;
   demoUrl?: string;
   thumbnail?: string;

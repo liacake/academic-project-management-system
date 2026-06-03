@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, FolderKanban, Kanban, Users, Shield, LogOut, Menu, X, Compass } from 'lucide-react';
+import { LayoutDashboard, FolderKanban, Kanban, Users, Shield, Cpu, LogOut, Menu, X, Compass } from 'lucide-react';
 import './Navbar.css';
 import strings from './strings';
 import { useAuth } from '../../context/AuthContext';
@@ -15,13 +15,17 @@ const Navbar: React.FC = () => {
     { path: '/projects', label: strings.navbar.projects,  Icon: FolderKanban },
     { path: '/kanban',   label: strings.navbar.kanban,    Icon: Kanban },
     { path: '/team',     label: strings.navbar.team,      Icon: Users },
-    ...(hasRole('admin') ? [{ path: '/admin', label: strings.navbar.admin, Icon: Shield }] : []),
+    ...(hasRole('admin') ? [
+      { path: '/admin', label: strings.navbar.admin, Icon: Shield },
+      { path: '/admin/technologies', label: strings.navbar.technologies, Icon: Cpu },
+    ] : []),
   ];
 
-  const isActive = (path: string) =>
-    path === '/browse'
-      ? location.pathname.startsWith('/browse')
-      : location.pathname === path;
+  const isActive = (path: string) => {
+    if (path === '/browse') return location.pathname.startsWith('/browse');
+    if (path === '/admin') return location.pathname === '/admin';
+    return location.pathname === path;
+  };
 
   const homePath = isAuthenticated ? '/' : '/browse';
 

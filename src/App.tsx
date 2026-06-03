@@ -14,6 +14,7 @@ import ProjectDetailPage from './components/pages/ProjectDetailPage';
 import KanbanPage from './components/pages/KanbanPage';
 import TeamPage from './components/pages/TeamPage';
 import AdminPage from './components/pages/AdminPage';
+import TechnologiesAdminPage from './components/pages/TechnologiesAdminPage';
 import './App.css';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -45,7 +46,8 @@ const AppRoutes: React.FC = () => {
         <Route path="/projects/:id" element={<ProjectDetailPage />} />
         <Route path="/kanban"       element={<KanbanPage />} />
         <Route path="/team"         element={<TeamPage />} />
-        <Route path="/admin"       element={<AdminRoute><AdminPage /></AdminRoute>} />
+        <Route path="/admin"                 element={<AdminRoute><AdminPage /></AdminRoute>} />
+        <Route path="/admin/technologies"    element={<AdminRoute><TechnologiesAdminPage /></AdminRoute>} />
       </Route>
 
       {/* Fallback: guests go to browse, authenticated users go home */}

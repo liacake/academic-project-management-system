@@ -5,6 +5,7 @@ import { useProjects } from '../../context/ProjectContext';
 import { useAuth } from '../../context/AuthContext';
 import { canModifyProject } from '../../lib/permissions';
 import { useMediaQuery } from '../../lib/useMediaQuery';
+import { pickDefaultProjectId, setLastViewedProjectId } from '../../lib/lastViewedProject';
 import { TaskStatus, Task } from '../../types';
 import Badge from '../ui/Badge';
 import UserLink from '../ui/UserLink';
@@ -93,14 +94,32 @@ const KanbanPage: React.FC = () => {
 
   useEffect(() => {
     const state = location.state as { projectId?: string; taskId?: string } | null;
-    if (state?.projectId) setSelectedProjectId(state.projectId);
-    else if (projects.length > 0 && !selectedProjectId) setSelectedProjectId(projects[0].id);
     if (state?.taskId) setSelectedTaskId(state.taskId);
-  }, [location.state, projects]);
+
+    if (!user || projects.length === 0) return;
+
+    if (state?.projectId && projects.some(p => p.id === state.projectId)) {
+      setSelectedProjectId(state.projectId);
+      return;
+    }
+
+    setSelectedProjectId(prev => {
+      if (prev && projects.some(p => p.id === prev)) return prev;
+      return pickDefaultProjectId({
+        userId: user.id,
+        accessibleIds: projects.map(p => p.id),
+        fallbackId: projects[0]?.id,
+      });
+    });
+  }, [location.state, projects, user]);
 
   useEffect(() => {
     if (selectedProjectId) fetchProject(selectedProjectId);
   }, [selectedProjectId, fetchProject]);
+
+  useEffect(() => {
+    if (selectedProjectId) setLastViewedProjectId(user?.id, selectedProjectId);
+  }, [selectedProjectId, user?.id]);
 
   const project = selectedProject?.id === selectedProjectId
     ? selectedProject

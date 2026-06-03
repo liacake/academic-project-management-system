@@ -5,6 +5,7 @@ import { useProjects } from '../../context/ProjectContext';
 import { useAuth } from '../../context/AuthContext';
 import { useTeam } from '../../context/TeamContext';
 import { canModifyProject, canViewAllProjects } from '../../lib/permissions';
+import { pickDefaultProjectId, setLastViewedProjectId } from '../../lib/lastViewedProject';
 import { Project, User } from '../../types';
 import Badge from '../ui/Badge';
 import UserLink from '../ui/UserLink';
@@ -94,14 +95,25 @@ const TeamPage: React.FC = () => {
   }, [baseProjects, search]);
 
   useEffect(() => {
-    if (!selectedProjectId && recentProjects.length > 0) {
-      setSelectedProjectId(recentProjects[0].id);
-    }
-  }, [recentProjects, selectedProjectId]);
+    if (!user || baseProjects.length === 0) return;
+
+    setSelectedProjectId(prev => {
+      if (prev && baseProjects.some(p => p.id === prev)) return prev;
+      return pickDefaultProjectId({
+        userId: user.id,
+        accessibleIds: baseProjects.map(p => p.id),
+        fallbackId: recentProjects[0]?.id,
+      });
+    });
+  }, [baseProjects, recentProjects, user]);
 
   useEffect(() => {
     if (selectedProjectId) fetchProject(selectedProjectId);
   }, [selectedProjectId, fetchProject]);
+
+  useEffect(() => {
+    if (selectedProjectId) setLastViewedProjectId(user?.id, selectedProjectId);
+  }, [selectedProjectId, user?.id]);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {

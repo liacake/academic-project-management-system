@@ -1,8 +1,9 @@
 import { useNavigate } from 'react-router-dom';
-import { FolderOpen, Play, CheckCircle, Users, ArrowRight } from 'lucide-react';
+import { FolderOpen, Play, CheckCircle, ListTodo, ArrowRight } from 'lucide-react';
 import { useProjects } from '../../context/ProjectContext';
 import { useAuth } from '../../context/AuthContext';
 import { canCreateProjects, canViewAllProjects } from '../../lib/permissions';
+import { countAssignedOpenTasks } from '../../lib/userTasks';
 import ProjectCard from '../ui/ProjectCard';
 import Badge from '../ui/Badge';
 import strings from '../ui/strings';
@@ -17,8 +18,8 @@ const DashboardPage: React.FC = () => {
 
   const activeProjects    = projects.filter(p => p.status === 'active');
   const completedProjects = projects.filter(p => p.status === 'completed');
+  const myOpenTasks = user ? countAssignedOpenTasks(projects, user.id) : 0;
   const allTasks   = projects.flatMap(p => p.tasks);
-  const allMembers = [...new Map(projects.flatMap(p => p.members).map(m => [m.id, m])).values()];
 
   const tasksByStatus = {
     todo:          allTasks.filter(t => t.status === 'todo').length,
@@ -38,11 +39,41 @@ const DashboardPage: React.FC = () => {
 
   const topTechs = Object.values(techFrequency).sort((a, b) => b.count - a.count).slice(0, 8);
 
-  const stats = [
-    { label: strings.dashboard.totalProjects,    value: projects.length,          Icon: FolderOpen,    cls: 'blue'   },
-    { label: strings.dashboard.activeProjects,   value: activeProjects.length,    Icon: Play,          cls: 'green'  },
-    { label: strings.dashboard.completedProjects,value: completedProjects.length, Icon: CheckCircle,   cls: 'purple' },
-    { label: strings.dashboard.totalMembers,     value: allMembers.length,        Icon: Users,         cls: 'orange' },
+  const stats: {
+    label: string;
+    value: number;
+    Icon: typeof FolderOpen;
+    cls: string;
+    onClick: () => void;
+  }[] = [
+    {
+      label: strings.dashboard.totalProjects,
+      value: projects.length,
+      Icon: FolderOpen,
+      cls: 'blue',
+      onClick: () => navigate('/projects'),
+    },
+    {
+      label: strings.dashboard.activeProjects,
+      value: activeProjects.length,
+      Icon: Play,
+      cls: 'green',
+      onClick: () => navigate('/projects?status=active'),
+    },
+    {
+      label: strings.dashboard.completedProjects,
+      value: completedProjects.length,
+      Icon: CheckCircle,
+      cls: 'purple',
+      onClick: () => navigate('/projects?status=completed'),
+    },
+    {
+      label: strings.dashboard.myOpenTasks,
+      value: myOpenTasks,
+      Icon: ListTodo,
+      cls: 'orange',
+      onClick: () => navigate('/tasks'),
+    },
   ];
 
   return (
@@ -64,14 +95,19 @@ const DashboardPage: React.FC = () => {
       </div>
 
       <div className="stats-grid">
-        {stats.map(({ label, value, Icon, cls }) => (
-          <div key={label} className="stat-card">
+        {stats.map(({ label, value, Icon, cls, onClick }) => (
+          <button
+            key={label}
+            type="button"
+            className="stat-card stat-card--clickable"
+            onClick={onClick}
+          >
             <div className={`stat-icon stat-icon--${cls}`}><Icon size={18} /></div>
             <div className="stat-content">
               <div className="stat-value">{value}</div>
               <div className="stat-label">{label}</div>
             </div>
-          </div>
+          </button>
         ))}
       </div>
 

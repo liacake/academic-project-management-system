@@ -13,6 +13,7 @@ import ProjectsPage from './components/pages/ProjectsPage';
 import ProjectDetailPage from './components/pages/ProjectDetailPage';
 import KanbanPage from './components/pages/KanbanPage';
 import TeamPage from './components/pages/TeamPage';
+import TasksPage from './components/pages/TasksPage';
 import AdminPage from './components/pages/AdminPage';
 import TechnologiesAdminPage from './components/pages/TechnologiesAdminPage';
 import ProfilePage from './components/pages/ProfilePage';
@@ -46,6 +47,7 @@ const AppRoutes: React.FC = () => {
         <Route path="/projects"     element={<ProjectsPage />} />
         <Route path="/projects/:id" element={<ProjectDetailPage />} />
         <Route path="/kanban"       element={<KanbanPage />} />
+        <Route path="/tasks"        element={<TasksPage />} />
         <Route path="/team"         element={<TeamPage />} />
         <Route path="/profile/:userId" element={<ProfilePage />} />
         <Route path="/admin"                 element={<AdminRoute><AdminPage /></AdminRoute>} />

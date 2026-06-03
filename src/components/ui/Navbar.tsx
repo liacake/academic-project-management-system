@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, FolderKanban, Kanban, Users, Shield, Cpu, LogOut, Menu, X, Compass } from 'lucide-react';
+import { LayoutDashboard, FolderKanban, Kanban, ListTodo, Users, Shield, Cpu, LogOut, Menu, X, Compass } from 'lucide-react';
 import './Navbar.css';
 import strings from './strings';
 import { useAuth } from '../../context/AuthContext';
@@ -15,6 +15,7 @@ const Navbar: React.FC = () => {
     { path: '/',         label: strings.navbar.dashboard, Icon: LayoutDashboard },
     { path: '/projects', label: strings.navbar.projects,  Icon: FolderKanban },
     { path: '/kanban',   label: strings.navbar.kanban,    Icon: Kanban },
+    { path: '/tasks',    label: strings.navbar.tasks,     Icon: ListTodo },
     { path: '/team',     label: strings.navbar.team,      Icon: Users },
     ...(hasRole('admin') ? [
       { path: '/admin', label: strings.navbar.admin, Icon: Shield },

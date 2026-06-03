@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useMemo, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Search, X, SlidersHorizontal } from 'lucide-react';
 import { useProjects } from '../../context/ProjectContext';
 import { useAuth } from '../../context/AuthContext';
@@ -16,10 +16,23 @@ const ProjectsPage: React.FC = () => {
   const navigate = useNavigate();
   const showCreate = canCreateProjects(user?.role);
   const overviewMode = canViewAllProjects(user?.role);
-  const [search, setSearch]           = useState('');
-  const [statusFilter, setStatusFilter] = useState<ProjectStatus | 'all'>('all');
-  const [showModal, setShowModal]     = useState(false);
-  const [sortBy, setSortBy]           = useState<'updated' | 'created' | 'title'>('updated');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [search, setSearch] = useState('');
+  const [showModal, setShowModal] = useState(false);
+  const [sortBy, setSortBy] = useState<'updated' | 'created' | 'title'>('updated');
+
+  const statusFilter = useMemo((): ProjectStatus | 'all' => {
+    const param = searchParams.get('status');
+    if (param && param in strings.projects.status) return param as ProjectStatus;
+    return 'all';
+  }, [searchParams]);
+
+  const setStatusFilter = (value: ProjectStatus | 'all') => {
+    const next = new URLSearchParams(searchParams);
+    if (value === 'all') next.delete('status');
+    else next.set('status', value);
+    setSearchParams(next, { replace: true });
+  };
 
   const filtered = projects
     .filter(p => {

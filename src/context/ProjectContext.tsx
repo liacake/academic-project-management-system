@@ -104,7 +104,7 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setLoading(true); setError(null);
     const { data, error: err } = await supabase
       .from('projects')
-      .select(`*, coordinator:profiles!projects_coordinator_id_fkey(*), project_technologies(technologies(*)), project_members(profiles(*))`)
+      .select(`*, coordinator:profiles!projects_coordinator_id_fkey(*), project_technologies(technologies(*)), project_members(profiles(*)), tasks(*)`)
       .order('updated_at', { ascending: false });
 
     if (err) { setError(err.message); setLoading(false); return; }
@@ -112,7 +112,10 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const mapped: Project[] = (data ?? []).map((p: Record<string, unknown>) => {
       const techs   = ((p.project_technologies as Array<Record<string, unknown>>) ?? []).map(r => dbToTech(r.technologies as Record<string, unknown>));
       const members = ((p.project_members as Array<Record<string, unknown>>) ?? []).map(r => dbToUser(r.profiles as Record<string, unknown>));
-      return dbToProject(p, techs, members, []);
+      const tasks   = ((p.tasks as Array<Record<string, unknown>>) ?? [])
+        .map(dbToTask)
+        .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+      return dbToProject(p, techs, members, tasks);
     });
     setProjects(mapped);
     setLoading(false);

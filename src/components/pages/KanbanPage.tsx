@@ -1,12 +1,13 @@
-import { useState, useEffect, useRef } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useState, useEffect, useMemo, useRef } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { GripVertical, Plus, X } from 'lucide-react';
 import { useProjects } from '../../context/ProjectContext';
 import { useAuth } from '../../context/AuthContext';
 import { canModifyProject } from '../../lib/permissions';
 import { useMediaQuery } from '../../lib/useMediaQuery';
 import { pickDefaultProjectId, setLastViewedProjectId } from '../../lib/lastViewedProject';
-import { TaskStatus, Task } from '../../types';
+import { getAssignedTasks } from '../../lib/userTasks';
+import { Project, TaskStatus, Task } from '../../types';
 import Badge from '../ui/Badge';
 import UserLink from '../ui/UserLink';
 import TaskPanel from '../tasks/TaskPanel';
@@ -23,6 +24,11 @@ const columns: { id: TaskStatus; label: string; color: string }[] = [
 const priorityVariant: Record<string, 'danger' | 'warning' | 'neutral'> = {
   high: 'danger', medium: 'warning', low: 'neutral',
 };
+
+interface TaskCardItem {
+  task: Task;
+  project: Project;
+}
 
 interface AddCardFormProps {
   projectId: string;
@@ -86,11 +92,14 @@ const KanbanPage: React.FC = () => {
   const location = useLocation();
   const isMobile = useMediaQuery('(max-width: 768px)');
   const [selectedProjectId, setSelectedProjectId] = useState<string>('');
+  const [showMyAssigned, setShowMyAssigned]         = useState(false);
   const [selectedTaskId, setSelectedTaskId]       = useState<string>('');
   const [draggingTask, setDraggingTask]     = useState<Task | null>(null);
   const [dragOverColumn, setDragOverColumn] = useState<TaskStatus | null>(null);
   const [addingInCol, setAddingInCol]       = useState<TaskStatus | null>(null);
   const [didDrag, setDidDrag]               = useState(false);
+
+  const isAssignedView = showMyAssigned;
 
   useEffect(() => {
     const state = location.state as { projectId?: string; taskId?: string } | null;
@@ -99,6 +108,7 @@ const KanbanPage: React.FC = () => {
     if (!user || projects.length === 0) return;
 
     if (state?.projectId && projects.some(p => p.id === state.projectId)) {
+      setShowMyAssigned(false);
       setSelectedProjectId(state.projectId);
       return;
     }
@@ -114,28 +124,53 @@ const KanbanPage: React.FC = () => {
   }, [location.state, projects, user]);
 
   useEffect(() => {
-    if (selectedProjectId) fetchProject(selectedProjectId);
-  }, [selectedProjectId, fetchProject]);
+    if (!isAssignedView && selectedProjectId) fetchProject(selectedProjectId);
+  }, [selectedProjectId, fetchProject, isAssignedView]);
 
   useEffect(() => {
-    if (selectedProjectId) setLastViewedProjectId(user?.id, selectedProjectId);
-  }, [selectedProjectId, user?.id]);
+    if (!isAssignedView && selectedProjectId) setLastViewedProjectId(user?.id, selectedProjectId);
+  }, [selectedProjectId, user?.id, isAssignedView]);
 
-  const project = selectedProject?.id === selectedProjectId
+  const project = !isAssignedView && selectedProject?.id === selectedProjectId
     ? selectedProject
-    : projects.find(p => p.id === selectedProjectId);
+    : !isAssignedView
+      ? projects.find(p => p.id === selectedProjectId)
+      : undefined;
 
-  const selectedTask = project?.tasks.find(t => t.id === selectedTaskId) ?? null;
+  const assignedTasks = useMemo(
+    () => (user ? getAssignedTasks(projects, user.id) : []),
+    [projects, user]
+  );
 
-  const getColumnTasks = (status: TaskStatus): Task[] =>
-    project?.tasks.filter(t => t.status === status) ?? [];
+  const panelContext = useMemo((): TaskCardItem | null => {
+    if (!selectedTaskId) return null;
+    if (isAssignedView) {
+      return assignedTasks.find(({ task }) => task.id === selectedTaskId) ?? null;
+    }
+    if (!project) return null;
+    const task = project.tasks.find(t => t.id === selectedTaskId);
+    return task ? { task, project } : null;
+  }, [selectedTaskId, isAssignedView, assignedTasks, project]);
 
-  const canEdit = project ? canModifyProject(user, project) : false;
+  const getColumnTasks = (status: TaskStatus): TaskCardItem[] => {
+    if (isAssignedView) {
+      return assignedTasks.filter(({ task }) => task.status === status);
+    }
+    if (!project) return [];
+    return project.tasks
+      .filter(t => t.status === status)
+      .map(task => ({ task, project }));
+  };
+
+  const canEditProject = (p: Project) => canModifyProject(user, p);
 
   const handleDrop = (status: TaskStatus) => {
-    if (!canEdit) return;
-    if (draggingTask && draggingTask.status !== status && project)
-      updateTaskStatus(project.id, draggingTask.id, status);
+    if (!draggingTask) return;
+    const taskProject = projects.find(p => p.id === draggingTask.projectId);
+    if (!taskProject || !canEditProject(taskProject)) return;
+    if (draggingTask.status !== status) {
+      updateTaskStatus(taskProject.id, draggingTask.id, status);
+    }
     setDraggingTask(null);
     setDragOverColumn(null);
     setDidDrag(true);
@@ -152,49 +187,80 @@ const KanbanPage: React.FC = () => {
 
   const closeTaskPanel = () => setSelectedTaskId('');
 
-  const handleProjectChange = (projectId: string) => {
-    setSelectedProjectId(projectId);
+  const handleProjectChange = (value: string) => {
+    setSelectedProjectId(value);
     setSelectedTaskId('');
     setAddingInCol(null);
   };
 
-  const taskPanel = selectedTask && project ? (
+  const handleAssignedToggle = (checked: boolean) => {
+    setShowMyAssigned(checked);
+    setSelectedTaskId('');
+    setAddingInCol(null);
+  };
+
+  const taskPanel = panelContext ? (
     <TaskPanel
-      project={project}
-      task={selectedTask}
-      canEdit={canEdit}
+      project={panelContext.project}
+      task={panelContext.task}
+      canEdit={canEditProject(panelContext.project)}
       onClose={closeTaskPanel}
     />
   ) : null;
 
+  const showBoard = isAssignedView || !!project;
+  const assignedCount = assignedTasks.length;
+
   return (
-    <div className={`kanban-page ${selectedTask ? 'kanban-page--task-open' : ''}`}>
+    <div className={`kanban-page ${panelContext ? 'kanban-page--task-open' : ''}`}>
       <div className="page-header">
         <div>
           <h1 className="page-title">{strings.kanban.title}</h1>
-          <p className="page-subtitle">{strings.kanban.subtitle}</p>
+          <p className="page-subtitle">
+            {isAssignedView ? strings.kanban.subtitleAssigned : strings.kanban.subtitle}
+          </p>
         </div>
-        <select
-          className="filter-select"
-          value={selectedProjectId}
-          onChange={e => handleProjectChange(e.target.value)}
-        >
-          <option value="">Select a project...</option>
-          {projects.map(p => <option key={p.id} value={p.id}>{p.title}</option>)}
-        </select>
+        <div className="kanban-header-controls">
+          <label className="kanban-assigned-toggle">
+            <input
+              type="checkbox"
+              checked={showMyAssigned}
+              onChange={e => handleAssignedToggle(e.target.checked)}
+            />
+            <span>{strings.kanban.myAssignedTasks}</span>
+          </label>
+          <select
+            className="filter-select"
+            value={selectedProjectId}
+            disabled={showMyAssigned}
+            onChange={e => handleProjectChange(e.target.value)}
+          >
+            <option value="">{strings.kanban.selectProject}</option>
+            {projects.map(p => (
+              <option key={p.id} value={p.id}>{p.title}</option>
+            ))}
+          </select>
+        </div>
       </div>
 
-      {!project ? (
+      {!showBoard ? (
         <div className="empty-state">
           <div className="empty-icon">🗂</div>
           <h3>{strings.kanban.selectProject}</h3>
+        </div>
+      ) : isAssignedView && assignedCount === 0 ? (
+        <div className="empty-state">
+          <div className="empty-icon">✓</div>
+          <h3>{strings.kanban.noAssignedTasks}</h3>
+          <p>{strings.kanban.noAssignedTasksHint}</p>
         </div>
       ) : (
         <div className="kanban-layout">
           <div className="kanban-board">
             {columns.map(col => {
-              const tasks = getColumnTasks(col.id);
-              const isAddingHere = addingInCol === col.id;
+              const items = getColumnTasks(col.id);
+              const isAddingHere = !isAssignedView && addingInCol === col.id;
+              const canEdit = !isAssignedView && project ? canEditProject(project) : false;
 
               return (
                 <div
@@ -210,7 +276,7 @@ const KanbanPage: React.FC = () => {
                       <span>{col.label}</span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                      <span className="kanban-count">{tasks.length}</span>
+                      <span className="kanban-count">{items.length}</span>
                       {canEdit && (
                         <button
                           className="kanban-add-btn"
@@ -224,7 +290,7 @@ const KanbanPage: React.FC = () => {
                   </div>
 
                   <div className="kanban-cards">
-                    {isAddingHere && (
+                    {isAddingHere && project && (
                       <AddCardForm
                         projectId={project.id}
                         status={col.id}
@@ -232,17 +298,19 @@ const KanbanPage: React.FC = () => {
                       />
                     )}
 
-                    {tasks.map(task => {
+                    {items.map(({ task, project: taskProject }) => {
                       const assignee =
-                        project.members.find(m => m.id === task.assigneeId) ??
-                        (project.coordinator?.id === task.assigneeId ? project.coordinator : undefined);
+                        taskProject.members.find(m => m.id === task.assigneeId) ??
+                        (taskProject.coordinator?.id === task.assigneeId ? taskProject.coordinator : undefined);
                       const isSelected = selectedTaskId === task.id;
+                      const cardCanEdit = canEditProject(taskProject);
+
                       return (
                         <div
                           key={task.id}
                           className={`kanban-card kanban-card--clickable ${isSelected ? 'kanban-card--selected' : ''} ${draggingTask?.id === task.id ? 'kanban-card--dragging' : ''}`}
-                          draggable={canEdit}
-                          onDragStart={() => { if (canEdit) setDraggingTask(task); }}
+                          draggable={cardCanEdit}
+                          onDragStart={() => { if (cardCanEdit) setDraggingTask(task); }}
                           onDragEnd={() => {
                             if (draggingTask) setDidDrag(true);
                             setDraggingTask(null);
@@ -258,6 +326,15 @@ const KanbanPage: React.FC = () => {
                             }
                           }}
                         >
+                          {isAssignedView && (
+                            <Link
+                              to={`/projects/${taskProject.id}`}
+                              className="kanban-card-project"
+                              onClick={e => e.stopPropagation()}
+                            >
+                              {taskProject.title}
+                            </Link>
+                          )}
                           <div className="kanban-card-header">
                             <Badge label={strings.kanban.priority[task.priority]} variant={priorityVariant[task.priority]} />
                             {task.dueDate && (
@@ -269,25 +346,28 @@ const KanbanPage: React.FC = () => {
                           <p className="kanban-card-title">{task.title}</p>
                           {task.description && <p className="kanban-card-desc">{task.description}</p>}
                           <div className="kanban-card-footer">
-                            {assignee ? (
-                              <UserLink
-                                userId={assignee.id}
-                                className="kanban-assignee"
-                                onClick={e => e.stopPropagation()}
-                              >
-                                <div className="kanban-assignee-avatar">{assignee.name.charAt(0)}</div>
-                                <span>{assignee.name.split(' ')[0]}</span>
-                              </UserLink>
-                            ) : (
-                              <span className="kanban-unassigned">{strings.kanban.unassigned}</span>
+                            {!isAssignedView && (
+                              assignee ? (
+                                <UserLink
+                                  userId={assignee.id}
+                                  className="kanban-assignee"
+                                  onClick={e => e.stopPropagation()}
+                                >
+                                  <div className="kanban-assignee-avatar">{assignee.name.charAt(0)}</div>
+                                  <span>{assignee.name.split(' ')[0]}</span>
+                                </UserLink>
+                              ) : (
+                                <span className="kanban-unassigned">{strings.kanban.unassigned}</span>
+                              )
                             )}
-                            {canEdit && <GripVertical size={13} className="kanban-drag-handle" />}
+                            {isAssignedView && <span className="kanban-card-you">{strings.kanban.assignedToYou}</span>}
+                            {cardCanEdit && <GripVertical size={13} className="kanban-drag-handle" />}
                           </div>
                         </div>
                       );
                     })}
 
-                    {tasks.length === 0 && !isAddingHere && (
+                    {items.length === 0 && !isAddingHere && (
                       <div className={`kanban-empty ${dragOverColumn === col.id ? 'kanban-empty--active' : ''}`}>
                         {strings.kanban.dropHere}
                       </div>

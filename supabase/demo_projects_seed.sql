@@ -3,20 +3,26 @@
 -- Owner UUID: 80d46357-a10a-4b83-9961-6ebad5845a6e
 --
 -- Run in Supabase Dashboard → SQL Editor (uses elevated privileges).
--- Safe to re-run: removes prior rows from this script (repository_url marker
--- or legacy "Demo Project %" titles) for this owner first.
+-- Set v_delete_all_projects = true to wipe every project before seeding.
+-- Otherwise only removes projects created by this script (apms-seed marker).
 -- ============================================================
 
 DO $$
 DECLARE
+  -- When true, deletes ALL projects (and related rows) before seeding.
+  v_delete_all_projects constant boolean := false;
+
   v_user constant uuid := '80d46357-a10a-4b83-9961-6ebad5845a6e';
+  v_seed_marker constant text := 'apms-seed';
   v_seed_repo_prefix constant text := 'https://github.com/demo/apms-seed-';
   v_legacy_repo_prefix constant text := 'https://github.com/demo/apms-project-';
+  v_project_repo_url constant text := 'https://github.com/liacake/academic-project-management-system';
+  v_demo_site_url constant text := 'https://liacake.github.io/';
   v_project_count constant int := 40;
-  v_tasks_per_project constant int := 10;
   v_project_id uuid;
   v_i int;
   v_j int;
+  v_task_count int;
   v_status text;
   v_task_status text;
   v_priority text;
@@ -29,8 +35,11 @@ DECLARE
   v_member_count int;
   v_student_count int;
   v_assignee_id uuid;
+  v_owner_role text;
   v_coordinator_ids uuid[];
   v_member_ids uuid[];
+  v_repository_url text;
+  v_demo_url text;
   v_tech_names text[] := ARRAY[
     'React', 'TypeScript', 'Node.js', 'PostgreSQL', 'Docker',
     'Python', 'MongoDB', 'AWS', 'Vue.js', 'GraphQL',
@@ -95,6 +104,8 @@ BEGIN
     RAISE EXCEPTION 'Profile % not found. Create the auth user / profile first.', v_user;
   END IF;
 
+  SELECT role INTO v_owner_role FROM public.profiles WHERE id = v_user;
+
   SELECT coalesce(array_agg(id ORDER BY random()), ARRAY[]::uuid[])
   INTO v_coordinator_ids
   FROM public.profiles
@@ -104,76 +115,106 @@ BEGIN
     RAISE EXCEPTION 'At least one coordinator profile is required for demo seed.';
   END IF;
 
+  -- Students only (admins/coordinators/guests are never added as members)
   SELECT count(*)::int
   INTO v_student_count
   FROM public.profiles
   WHERE role = 'student' AND id <> v_user;
 
-  -- Remove previous demo seed (this script + legacy title prefix)
-  DELETE FROM public.tasks
-  WHERE project_id IN (
-    SELECT id FROM public.projects
-    WHERE owner_id = v_user
-      AND (
-        repository_url LIKE v_seed_repo_prefix || '%'
-        OR repository_url LIKE v_legacy_repo_prefix || '%'
-        OR title LIKE 'Demo Project %'
-      )
-  );
-
-  DELETE FROM public.project_technologies
-  WHERE project_id IN (
-    SELECT id FROM public.projects
-    WHERE owner_id = v_user
-      AND (
-        repository_url LIKE v_seed_repo_prefix || '%'
-        OR repository_url LIKE v_legacy_repo_prefix || '%'
-        OR title LIKE 'Demo Project %'
-      )
-  );
-
-  DELETE FROM public.coordinator_invites
-  WHERE project_id IN (
-    SELECT id FROM public.projects
-    WHERE owner_id = v_user
-      AND (
-        repository_url LIKE v_seed_repo_prefix || '%'
-        OR repository_url LIKE v_legacy_repo_prefix || '%'
-        OR title LIKE 'Demo Project %'
-      )
-  );
-
-  DELETE FROM public.project_members
-  WHERE project_id IN (
-    SELECT id FROM public.projects
-    WHERE owner_id = v_user
-      AND (
-        repository_url LIKE v_seed_repo_prefix || '%'
-        OR repository_url LIKE v_legacy_repo_prefix || '%'
-        OR title LIKE 'Demo Project %'
-      )
-  );
-
-  DELETE FROM public.projects
-  WHERE owner_id = v_user
-    AND (
-      repository_url LIKE v_seed_repo_prefix || '%'
-      OR repository_url LIKE v_legacy_repo_prefix || '%'
-      OR title LIKE 'Demo Project %'
+  IF v_delete_all_projects THEN
+    DELETE FROM public.tasks;
+    DELETE FROM public.project_technologies;
+    DELETE FROM public.coordinator_invites;
+    DELETE FROM public.project_members;
+    DELETE FROM public.projects;
+    RAISE NOTICE 'Deleted all projects (v_delete_all_projects = true).';
+  ELSE
+    DELETE FROM public.tasks
+    WHERE project_id IN (
+      SELECT id FROM public.projects
+      WHERE owner_id = v_user
+        AND (
+          position(v_seed_marker in description) > 0
+          OR repository_url LIKE v_seed_repo_prefix || '%'
+          OR repository_url LIKE v_legacy_repo_prefix || '%'
+          OR repository_url = v_project_repo_url
+          OR title LIKE 'Demo Project %'
+        )
     );
+
+    DELETE FROM public.project_technologies
+    WHERE project_id IN (
+      SELECT id FROM public.projects
+      WHERE owner_id = v_user
+        AND (
+          position(v_seed_marker in description) > 0
+          OR repository_url LIKE v_seed_repo_prefix || '%'
+          OR repository_url LIKE v_legacy_repo_prefix || '%'
+          OR repository_url = v_project_repo_url
+          OR title LIKE 'Demo Project %'
+        )
+    );
+
+    DELETE FROM public.coordinator_invites
+    WHERE project_id IN (
+      SELECT id FROM public.projects
+      WHERE owner_id = v_user
+        AND (
+          position(v_seed_marker in description) > 0
+          OR repository_url LIKE v_seed_repo_prefix || '%'
+          OR repository_url LIKE v_legacy_repo_prefix || '%'
+          OR repository_url = v_project_repo_url
+          OR title LIKE 'Demo Project %'
+        )
+    );
+
+    DELETE FROM public.project_members
+    WHERE project_id IN (
+      SELECT id FROM public.projects
+      WHERE owner_id = v_user
+        AND (
+          position(v_seed_marker in description) > 0
+          OR repository_url LIKE v_seed_repo_prefix || '%'
+          OR repository_url LIKE v_legacy_repo_prefix || '%'
+          OR repository_url = v_project_repo_url
+          OR title LIKE 'Demo Project %'
+        )
+    );
+
+    DELETE FROM public.projects
+    WHERE owner_id = v_user
+      AND (
+        position(v_seed_marker in description) > 0
+        OR repository_url LIKE v_seed_repo_prefix || '%'
+        OR repository_url LIKE v_legacy_repo_prefix || '%'
+        OR repository_url = v_project_repo_url
+        OR title LIKE 'Demo Project %'
+      );
+  END IF;
 
   FOR v_i IN 1..v_project_count LOOP
     v_status := (ARRAY['planning','active','active','completed','archived'])[1 + ((v_i - 1) % 5)];
     v_semester := (ARRAY['Fall','Spring','Summer','Winter'])[1 + ((v_i - 1) % 4)];
     v_year := 2024 + ((v_i - 1) % 3);
     v_title := v_titles[v_i];
+    v_task_count := 4 + floor(random() * 7)::int; -- 4–10 tasks per project
 
     v_desc := format(
-      'Capstone project covering requirements, implementation, testing, and documentation. Focus area: %s. Semester: %s %s.',
-      v_title, v_semester, v_year
+      'Capstone project covering requirements, implementation, testing, and documentation. Focus area: %s. Semester: %s %s. %s',
+      v_title, v_semester, v_year, v_seed_marker
     );
 
     v_coord_id := v_coordinator_ids[1 + floor(random() * array_length(v_coordinator_ids, 1))::int];
+
+    -- ~half of projects get a repository URL; ~every third gets a live demo link
+    v_repository_url := CASE
+      WHEN v_i % 2 = 0 THEN v_project_repo_url
+      ELSE NULL
+    END;
+    v_demo_url := CASE
+      WHEN v_i % 3 = 0 THEN v_demo_site_url
+      ELSE NULL
+    END;
 
     INSERT INTO public.projects (
       title,
@@ -198,18 +239,20 @@ BEGIN
       v_year,
       (date '2025-09-01' + ((v_i - 1) * 12) * interval '1 day')::date,
       (date '2026-06-30' + ((v_i - 1) * 9) * interval '1 day')::date,
-      v_seed_repo_prefix || v_i,
-      CASE WHEN v_i % 3 = 0 THEN format('https://%s.apms.example.com', lower(replace(v_title, ' ', '-'))) ELSE NULL END,
+      v_repository_url,
+      v_demo_url,
       (v_i % 5 <> 0)
     )
     RETURNING id INTO v_project_id;
 
-    -- Owner is always a member
-    INSERT INTO public.project_members (project_id, user_id)
-    VALUES (v_project_id, v_user)
-    ON CONFLICT DO NOTHING;
+    -- Owner as member only when not an admin (admins are never project members)
+    IF v_owner_role IS DISTINCT FROM 'admin' THEN
+      INSERT INTO public.project_members (project_id, user_id)
+      VALUES (v_project_id, v_user)
+      ON CONFLICT DO NOTHING;
+    END IF;
 
-    -- Random students (2–10, or fewer if not enough student profiles)
+    -- Random students only, 2–10 per project (never admins/coordinators)
     v_member_count := CASE
       WHEN v_student_count = 0 THEN 0
       ELSE least(
@@ -224,7 +267,8 @@ BEGIN
       FROM (
         SELECT id
         FROM public.profiles
-        WHERE role = 'student' AND id <> v_user
+        WHERE role = 'student'
+          AND id <> v_user
         ORDER BY random()
         LIMIT v_member_count
       ) picked;
@@ -250,8 +294,8 @@ BEGIN
       END IF;
     END LOOP;
 
-    -- Tasks with natural titles; assignee = random project member (incl. owner)
-    FOR v_j IN 1..v_tasks_per_project LOOP
+    -- Tasks (4–10); assignee = random project member
+    FOR v_j IN 1..v_task_count LOOP
       v_task_status := (ARRAY['todo','todo','in-progress','in-progress','review','done'])[1 + ((v_j - 1) % 6)];
       v_priority := (ARRAY['low','medium','medium','high'])[1 + ((v_j - 1) % 4)];
 
@@ -272,7 +316,7 @@ BEGIN
         due_date
       ) VALUES (
         v_project_id,
-        v_task_titles[v_j],
+        v_task_titles[1 + ((v_j - 1) % array_length(v_task_titles, 1))],
         format(
           'Deliverable for the %s milestone. Tracked on the team Kanban board.',
           (ARRAY['planning','development','testing','release'])[1 + ((v_j - 1) % 4)]
@@ -285,24 +329,12 @@ BEGIN
     END LOOP;
   END LOOP;
 
-  RAISE NOTICE 'Seeded % projects × % tasks for owner % (% student profiles available for membership)',
-    v_project_count, v_project_count * v_tasks_per_project, v_user, v_student_count;
+  RAISE NOTICE 'Seeded % projects for owner % (% student profiles for membership). delete_all=%',
+    v_project_count, v_user, v_student_count, v_delete_all_projects;
 END $$;
 
--- Quick verification (optional)
-SELECT
-  (SELECT count(*) FROM public.projects
-   WHERE owner_id = '80d46357-a10a-4b83-9961-6ebad5845a6e'::uuid
-     AND repository_url LIKE 'https://github.com/demo/apms-seed-%') AS seeded_projects,
-  (SELECT count(*) FROM public.tasks t
-   JOIN public.projects p ON p.id = t.project_id
-   WHERE p.owner_id = '80d46357-a10a-4b83-9961-6ebad5845a6e'::uuid
-     AND p.repository_url LIKE 'https://github.com/demo/apms-seed-%') AS seeded_tasks,
-  (SELECT count(*) FROM public.project_members pm
-   JOIN public.projects p ON p.id = pm.project_id
-   WHERE p.owner_id = '80d46357-a10a-4b83-9961-6ebad5845a6e'::uuid
-     AND p.repository_url LIKE 'https://github.com/demo/apms-seed-%') AS seeded_memberships,
-  (SELECT count(*) FROM public.projects
-   WHERE owner_id = '80d46357-a10a-4b83-9961-6ebad5845a6e'::uuid
-     AND coordinator_id IS NOT NULL
-     AND repository_url LIKE 'https://github.com/demo/apms-seed-%') AS seeded_with_coordinator;
+-- Optional checks (run separately after the block above):
+-- SELECT count(*) FROM public.projects WHERE position('apms-seed' in description) > 0;
+-- SELECT count(*) FROM public.tasks t
+--   JOIN public.projects p ON p.id = t.project_id
+--   WHERE position('apms-seed' in p.description) > 0;

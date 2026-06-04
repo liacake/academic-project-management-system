@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect, FormEvent } from 'react';
-import { X, Pencil } from 'lucide-react';
+import { X, Pencil, Trash2 } from 'lucide-react';
 import { useProjects } from '../../context/ProjectContext';
 import { Project, Task, TaskStatus, User } from '../../types';
 import Badge from '../ui/Badge';
@@ -50,13 +50,25 @@ interface TaskPanelProps {
   project: Project;
   task: Task;
   canEdit: boolean;
+  canEditStatus?: boolean;
+  canDelete?: boolean;
   onClose: () => void;
+  onDeleted?: () => void;
 }
 
-const TaskPanel: React.FC<TaskPanelProps> = ({ project, task, canEdit, onClose }) => {
-  const { updateTask } = useProjects();
+const TaskPanel: React.FC<TaskPanelProps> = ({
+  project,
+  task,
+  canEdit,
+  canEditStatus = false,
+  canDelete = false,
+  onClose,
+  onDeleted,
+}) => {
+  const { updateTask, deleteTask } = useProjects();
   const assignees = useMemo(() => collectAssignees(project), [project]);
   const assignee = resolveAssignee(project, task.assigneeId);
+  const statusOnly = !canEdit && canEditStatus;
 
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState(task.title);
@@ -66,6 +78,7 @@ const TaskPanel: React.FC<TaskPanelProps> = ({ project, task, canEdit, onClose }
   const [assigneeId, setAssigneeId] = useState(task.assigneeId ?? '');
   const [dueDate, setDueDate] = useState(task.dueDate ?? '');
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -96,23 +109,57 @@ const TaskPanel: React.FC<TaskPanelProps> = ({ project, task, canEdit, onClose }
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!title.trim()) return;
+    if (!title.trim() && !statusOnly) return;
     setSaving(true);
     setError('');
     try {
-      await updateTask(project.id, task.id, {
-        title: title.trim(),
-        description: description.trim() || undefined,
-        status,
-        priority,
-        assigneeId: assigneeId || undefined,
-        dueDate: dueDate || undefined,
-      });
+      if (statusOnly) {
+        await updateTask(project.id, task.id, { status });
+      } else {
+        await updateTask(project.id, task.id, {
+          title: title.trim(),
+          description: description.trim() || undefined,
+          status,
+          priority,
+          assigneeId: assigneeId || undefined,
+          dueDate: dueDate || undefined,
+        });
+      }
       setEditing(false);
     } catch {
       setError(strings.kanban.saveError);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleStatusChange = async (next: TaskStatus) => {
+    if (next === task.status) return;
+    setStatus(next);
+    setSaving(true);
+    setError('');
+    try {
+      await updateTask(project.id, task.id, { status: next });
+    } catch {
+      setStatus(task.status);
+      setError(strings.kanban.saveError);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!window.confirm(strings.kanban.confirmDeleteTask)) return;
+    setDeleting(true);
+    setError('');
+    try {
+      await deleteTask(project.id, task.id);
+      onDeleted?.();
+      onClose();
+    } catch {
+      setError(strings.kanban.deleteTaskError);
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -132,11 +179,20 @@ const TaskPanel: React.FC<TaskPanelProps> = ({ project, task, canEdit, onClose }
               <Pencil size={13} /> {strings.kanban.editTaskBtn}
             </button>
           )}
+          {statusOnly && !editing && (
+            <button
+              type="button"
+              className="task-panel-edit-btn"
+              onClick={() => setEditing(true)}
+            >
+              <Pencil size={13} /> {strings.kanban.changeStatus}
+            </button>
+          )}
           <button
             type="button"
             className="modal-close"
             onClick={onClose}
-            disabled={saving}
+            disabled={saving || deleting}
             aria-label={strings.modal.close}
           >
             <X size={14} />
@@ -147,29 +203,33 @@ const TaskPanel: React.FC<TaskPanelProps> = ({ project, task, canEdit, onClose }
       {editing ? (
         <form className="task-panel-form" onSubmit={handleSubmit}>
           <div className="task-panel-body">
-            <div className="form-group">
-              <label htmlFor="task-title">{strings.kanban.taskTitle}</label>
-              <input
-                id="task-title"
-                type="text"
-                value={title}
-                onChange={e => setTitle(e.target.value)}
-                required
-              />
-            </div>
+            {!statusOnly && (
+              <>
+                <div className="form-group">
+                  <label htmlFor="task-title">{strings.kanban.taskTitle}</label>
+                  <input
+                    id="task-title"
+                    type="text"
+                    value={title}
+                    onChange={e => setTitle(e.target.value)}
+                    required
+                  />
+                </div>
 
-            <div className="form-group">
-              <label htmlFor="task-desc">{strings.kanban.taskDescription}</label>
-              <textarea
-                id="task-desc"
-                value={description}
-                onChange={e => setDescription(e.target.value)}
-                placeholder={strings.kanban.taskDescriptionPlaceholder}
-                rows={4}
-              />
-            </div>
+                <div className="form-group">
+                  <label htmlFor="task-desc">{strings.kanban.taskDescription}</label>
+                  <textarea
+                    id="task-desc"
+                    value={description}
+                    onChange={e => setDescription(e.target.value)}
+                    placeholder={strings.kanban.taskDescriptionPlaceholder}
+                    rows={4}
+                  />
+                </div>
+              </>
+            )}
 
-            <div className="form-row">
+            <div className={statusOnly ? 'form-group' : 'form-row'}>
               <div className="form-group">
                 <label htmlFor="task-status">{strings.kanban.taskStatus}</label>
                 <select id="task-status" value={status} onChange={e => setStatus(e.target.value as TaskStatus)}>
@@ -178,36 +238,40 @@ const TaskPanel: React.FC<TaskPanelProps> = ({ project, task, canEdit, onClose }
                   ))}
                 </select>
               </div>
-              <div className="form-group">
-                <label htmlFor="task-priority">{strings.kanban.taskPriority}</label>
-                <select id="task-priority" value={priority} onChange={e => setPriority(e.target.value as Task['priority'])}>
-                  {Object.entries(strings.kanban.priority).map(([key, label]) => (
-                    <option key={key} value={key}>{label}</option>
-                  ))}
-                </select>
-              </div>
+              {!statusOnly && (
+                <div className="form-group">
+                  <label htmlFor="task-priority">{strings.kanban.taskPriority}</label>
+                  <select id="task-priority" value={priority} onChange={e => setPriority(e.target.value as Task['priority'])}>
+                    {Object.entries(strings.kanban.priority).map(([key, label]) => (
+                      <option key={key} value={key}>{label}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
 
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="task-assignee">{strings.kanban.taskAssignee}</label>
-                <select id="task-assignee" value={assigneeId} onChange={e => setAssigneeId(e.target.value)}>
-                  <option value="">{strings.kanban.unassigned}</option>
-                  {assignees.map(user => (
-                    <option key={user.id} value={user.id}>{user.name}</option>
-                  ))}
-                </select>
+            {!statusOnly && (
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="task-assignee">{strings.kanban.taskAssignee}</label>
+                  <select id="task-assignee" value={assigneeId} onChange={e => setAssigneeId(e.target.value)}>
+                    <option value="">{strings.kanban.unassigned}</option>
+                    {assignees.map(user => (
+                      <option key={user.id} value={user.id}>{user.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label htmlFor="task-due">{strings.kanban.taskDueDate}</label>
+                  <input
+                    id="task-due"
+                    type="date"
+                    value={dueDate}
+                    onChange={e => setDueDate(e.target.value)}
+                  />
+                </div>
               </div>
-              <div className="form-group">
-                <label htmlFor="task-due">{strings.kanban.taskDueDate}</label>
-                <input
-                  id="task-due"
-                  type="date"
-                  value={dueDate}
-                  onChange={e => setDueDate(e.target.value)}
-                />
-              </div>
-            </div>
+            )}
 
             {error && <div className="login-error">{error}</div>}
           </div>
@@ -216,7 +280,7 @@ const TaskPanel: React.FC<TaskPanelProps> = ({ project, task, canEdit, onClose }
             <button type="button" className="btn-cancel" onClick={handleCancelEdit} disabled={saving}>
               {strings.kanban.cancelEdit}
             </button>
-            <button type="submit" className="btn-primary" disabled={saving || !title.trim()}>
+            <button type="submit" className="btn-primary" disabled={saving || (!statusOnly && !title.trim())}>
               {saving ? strings.kanban.saving : strings.kanban.saveTask}
             </button>
           </div>
@@ -235,10 +299,24 @@ const TaskPanel: React.FC<TaskPanelProps> = ({ project, task, canEdit, onClose }
           <div className="task-view-meta">
             <div className="task-view-row">
               <span className="task-view-label">{strings.kanban.taskStatus}</span>
-              <Badge
-                label={strings.kanban.columns[task.status]}
-                variant={statusVariant[task.status]}
-              />
+              {statusOnly ? (
+                <select
+                  className="task-panel-status-select"
+                  value={status}
+                  disabled={saving}
+                  onChange={e => handleStatusChange(e.target.value as TaskStatus)}
+                  aria-label={strings.kanban.taskStatus}
+                >
+                  {Object.entries(strings.kanban.columns).map(([key, label]) => (
+                    <option key={key} value={key}>{label}</option>
+                  ))}
+                </select>
+              ) : (
+                <Badge
+                  label={strings.kanban.columns[task.status]}
+                  variant={statusVariant[task.status]}
+                />
+              )}
             </div>
             <div className="task-view-row">
               <span className="task-view-label">{strings.kanban.taskPriority}</span>
@@ -265,6 +343,21 @@ const TaskPanel: React.FC<TaskPanelProps> = ({ project, task, canEdit, onClose }
               </span>
             </div>
           </div>
+
+          {error && <div className="login-error">{error}</div>}
+        </div>
+      )}
+
+      {canDelete && !editing && (
+        <div className="task-panel-footer task-panel-footer--danger">
+          <button
+            type="button"
+            className="btn-danger"
+            onClick={handleDelete}
+            disabled={deleting || saving}
+          >
+            <Trash2 size={14} /> {deleting ? strings.kanban.saving : strings.kanban.deleteTask}
+          </button>
         </div>
       )}
     </div>

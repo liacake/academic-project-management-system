@@ -1,0 +1,50 @@
+.task-status-move {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  align-items: center;
+}
+
+.task-status-move-btn {
+  padding: 0.28rem 0.5rem;
+  font-size: 0.68rem;
+  font-weight: 500;
+  line-height: 1.2;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--bg);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: border-color 0.1s, color 0.1s, background 0.1s;
+  white-space: nowrap;
+}
+
+.task-status-move-btn:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-bg, var(--surface));
+}
+
+.task-status-move-btn.is-current {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-bg, var(--surface));
+  cursor: default;
+}
+
+.task-status-move-btn:disabled:not(.is-current) {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+@media (max-width: 580px) {
+  .task-status-move {
+    width: 100%;
+  }
+
+  .task-status-move-btn {
+    flex: 1 1 auto;
+    min-width: 0;
+    text-align: center;
+  }
+}

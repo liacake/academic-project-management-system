@@ -31,6 +31,46 @@
   gap: 0.35rem;
 }
 
+.task-panel-status-select {
+  font-size: 0.82rem;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+  max-width: 100%;
+}
+
+.task-panel-footer--danger {
+  border-top: 1px solid var(--border);
+  margin-top: auto;
+}
+
+.task-panel-footer--danger .btn-danger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  width: 100%;
+  justify-content: center;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--danger);
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.task-panel-footer--danger .btn-danger:hover:not(:disabled) {
+  border-color: var(--danger);
+  background: #fef2f2;
+}
+
+.task-panel-footer--danger .btn-danger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .task-panel-edit-btn {
   display: inline-flex;
   align-items: center;

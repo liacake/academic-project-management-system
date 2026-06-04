@@ -7,6 +7,13 @@
   gap: 0.5rem;
 }
 
+.tasks-toolbar .toolbar-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+
 .tasks-filter-label {
   font-size: 0.8rem;
   color: var(--text-muted);
@@ -28,7 +35,6 @@
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 8px;
-  cursor: pointer;
   transition: border-color 0.1s, background 0.1s;
 }
 
@@ -37,17 +43,34 @@
   background: var(--accent-bg, var(--surface));
 }
 
-.task-list-item:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-}
-
-.task-list-item-main {
+.task-list-item-open {
   display: flex;
   flex-direction: column;
   gap: 0.2rem;
   min-width: 0;
   flex: 1;
+  padding: 0;
+  border: none;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+
+.task-list-item-open:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.task-list-item-side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.45rem;
+  flex-shrink: 0;
+  max-width: min(100%, 22rem);
 }
 
 .task-list-item-title {
@@ -90,6 +113,12 @@
 @media (max-width: 580px) {
   .task-list-item {
     flex-direction: column;
+  }
+
+  .task-list-item-side {
+    align-items: stretch;
+    max-width: none;
+    width: 100%;
   }
 
   .task-list-item-meta {

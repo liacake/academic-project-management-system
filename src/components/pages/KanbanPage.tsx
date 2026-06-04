@@ -3,7 +3,14 @@ import { Link, useLocation } from 'react-router-dom';
 import { GripVertical, Plus, X } from 'lucide-react';
 import { useProjects } from '../../context/ProjectContext';
 import { useAuth } from '../../context/AuthContext';
-import { canModifyProject } from '../../lib/permissions';
+import {
+  canModifyProject,
+  canCreateSelfAssignedTask,
+  canMoveAssignedTask,
+  canEditTask,
+  canDeleteTask,
+  canChangeAssignedTaskStatus,
+} from '../../lib/permissions';
 import { useMediaQuery } from '../../lib/useMediaQuery';
 import { pickDefaultProjectId, setLastViewedProjectId } from '../../lib/lastViewedProject';
 import { getAssignedTasks } from '../../lib/userTasks';
@@ -33,10 +40,11 @@ interface TaskCardItem {
 interface AddCardFormProps {
   projectId: string;
   status: TaskStatus;
+  assigneeId?: string;
   onClose: () => void;
 }
 
-const AddCardForm: React.FC<AddCardFormProps> = ({ projectId, status, onClose }) => {
+const AddCardForm: React.FC<AddCardFormProps> = ({ projectId, status, assigneeId, onClose }) => {
   const { addTask } = useProjects();
   const [title, setTitle]       = useState('');
   const [priority, setPriority] = useState<Task['priority']>('medium');
@@ -48,7 +56,15 @@ const AddCardForm: React.FC<AddCardFormProps> = ({ projectId, status, onClose })
   const handleSubmit = async () => {
     if (!title.trim()) return;
     setSaving(true);
-    await addTask({ projectId, title: title.trim(), status, priority, description: undefined, assigneeId: undefined, dueDate: undefined });
+    await addTask({
+      projectId,
+      title: title.trim(),
+      status,
+      priority,
+      description: undefined,
+      assigneeId,
+      dueDate: undefined,
+    });
     setSaving(false);
     onClose();
   };
@@ -163,11 +179,14 @@ const KanbanPage: React.FC = () => {
   };
 
   const canEditProject = (p: Project) => canModifyProject(user, p);
+  const canAddTask = (p: Project) => canCreateSelfAssignedTask(user, p);
+  const canDragTask = (task: Task, p: Project) =>
+    canModifyProject(user, p) || canMoveAssignedTask(user, task, p);
 
   const handleDrop = (status: TaskStatus) => {
     if (!draggingTask) return;
     const taskProject = projects.find(p => p.id === draggingTask.projectId);
-    if (!taskProject || !canEditProject(taskProject)) return;
+    if (!taskProject || !canDragTask(draggingTask, taskProject)) return;
     if (draggingTask.status !== status) {
       updateTaskStatus(taskProject.id, draggingTask.id, status);
     }
@@ -203,8 +222,11 @@ const KanbanPage: React.FC = () => {
     <TaskPanel
       project={panelContext.project}
       task={panelContext.task}
-      canEdit={canEditProject(panelContext.project)}
+      canEdit={canEditTask(user, panelContext.project)}
+      canEditStatus={canChangeAssignedTaskStatus(user, panelContext.task, panelContext.project)}
+      canDelete={canDeleteTask(user, panelContext.project)}
       onClose={closeTaskPanel}
+      onDeleted={closeTaskPanel}
     />
   ) : null;
 
@@ -260,7 +282,8 @@ const KanbanPage: React.FC = () => {
             {columns.map(col => {
               const items = getColumnTasks(col.id);
               const isAddingHere = !isAssignedView && addingInCol === col.id;
-              const canEdit = !isAssignedView && project ? canEditProject(project) : false;
+              const canAdd = !isAssignedView && project ? canAddTask(project) : false;
+              const selfAssignId = user?.id;
 
               return (
                 <div
@@ -277,7 +300,7 @@ const KanbanPage: React.FC = () => {
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
                       <span className="kanban-count">{items.length}</span>
-                      {canEdit && (
+                      {canAdd && (
                         <button
                           className="kanban-add-btn"
                           title="Add task"
@@ -294,6 +317,9 @@ const KanbanPage: React.FC = () => {
                       <AddCardForm
                         projectId={project.id}
                         status={col.id}
+                        assigneeId={
+                          canEditProject(project) ? undefined : selfAssignId
+                        }
                         onClose={() => setAddingInCol(null)}
                       />
                     )}
@@ -303,14 +329,14 @@ const KanbanPage: React.FC = () => {
                         taskProject.members.find(m => m.id === task.assigneeId) ??
                         (taskProject.coordinator?.id === task.assigneeId ? taskProject.coordinator : undefined);
                       const isSelected = selectedTaskId === task.id;
-                      const cardCanEdit = canEditProject(taskProject);
+                      const cardCanDrag = canDragTask(task, taskProject);
 
                       return (
                         <div
                           key={task.id}
                           className={`kanban-card kanban-card--clickable ${isSelected ? 'kanban-card--selected' : ''} ${draggingTask?.id === task.id ? 'kanban-card--dragging' : ''}`}
-                          draggable={cardCanEdit}
-                          onDragStart={() => { if (cardCanEdit) setDraggingTask(task); }}
+                          draggable={cardCanDrag}
+                          onDragStart={() => { if (cardCanDrag) setDraggingTask(task); }}
                           onDragEnd={() => {
                             if (draggingTask) setDidDrag(true);
                             setDraggingTask(null);
@@ -361,7 +387,7 @@ const KanbanPage: React.FC = () => {
                               )
                             )}
                             {isAssignedView && <span className="kanban-card-you">{strings.kanban.assignedToYou}</span>}
-                            {cardCanEdit && <GripVertical size={13} className="kanban-drag-handle" />}
+                            {cardCanDrag && <GripVertical size={13} className="kanban-drag-handle" />}
                           </div>
                         </div>
                       );

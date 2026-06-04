@@ -21,6 +21,7 @@ interface ProjectContextType {
   updateProject: (id: string, updates: Partial<Project>) => Promise<void>;
   deleteProject: (id: string) => Promise<void>;
   addTask: (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+  deleteTask: (projectId: string, taskId: string) => Promise<void>;
   addMember: (projectId: string, userId: string) => Promise<void>;
   removeMember: (projectId: string, userId: string) => Promise<void>;
 }
@@ -235,11 +236,22 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
       status: task.status, priority: task.priority,
       assignee_id: task.assigneeId ?? null, due_date: task.dueDate ?? null,
     }).select().single();
-    if (err || !data) { setError(err?.message ?? 'Failed to add task'); return; }
+    if (err || !data) { setError(err?.message ?? 'Failed to add task'); throw err ?? new Error('Failed to add task'); }
     const newTask = dbToTask(data as Record<string, unknown>);
     const append = (p: Project) => p.id !== task.projectId ? p : { ...p, tasks: [...p.tasks, newTask] };
     setProjects(prev => prev.map(append));
     setSelectedProject(prev => prev?.id !== task.projectId ? prev : { ...prev, tasks: [...prev.tasks, newTask] });
+  }, []);
+
+  const deleteTask = useCallback(async (projectId: string, taskId: string) => {
+    const { error: err } = await supabase.from('tasks').delete().eq('id', taskId);
+    if (err) { setError(err.message); throw err; }
+    const remove = (p: Project) =>
+      p.id !== projectId ? p : { ...p, tasks: p.tasks.filter(t => t.id !== taskId) };
+    setProjects(prev => prev.map(remove));
+    setSelectedProject(prev =>
+      prev?.id !== projectId ? prev : { ...prev, tasks: prev.tasks.filter(t => t.id !== taskId) }
+    );
   }, []);
 
   const addMember = useCallback(async (projectId: string, userId: string) => {
@@ -258,7 +270,7 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     <ProjectContext.Provider value={{
       projects, selectedProject, loading, error,
       selectProject, fetchProject, updateTaskStatus, updateTask,
-      addProject, updateProject, deleteProject, addTask,
+      addProject, updateProject, deleteProject, addTask, deleteTask,
       addMember, removeMember,
     }}>
       {children}

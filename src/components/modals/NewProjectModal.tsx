@@ -4,6 +4,7 @@ import { useProjects } from '../../context/ProjectContext';
 import { useAuth } from '../../context/AuthContext';
 import { useTechnologies } from '../../context/TechnologyContext';
 import { useTeam } from '../../context/TeamContext';
+import MemberInvitePicker from '../ui/MemberInvitePicker';
 import { ProjectStatus, Technology, User } from '../../types';
 import { isValidProjectDateRange } from '../../lib/dates';
 import strings from '../ui/strings';
@@ -29,14 +30,23 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ onClose }) => {
   const [repositoryUrl, setRepositoryUrl] = useState('');
   const [demoUrl, setDemoUrl]           = useState('');
   const [isPublic, setIsPublic]         = useState(true);
-  const [saving, setSaving]             = useState(false);
-  const [error, setError]               = useState('');
+  const [saving, setSaving] = useState(false);
+  const [error, setError]   = useState('');
 
   const toggleTech = (tech: Technology) =>
     setSelectedTechs(prev => prev.find(t => t.id === tech.id) ? prev.filter(t => t.id !== tech.id) : [...prev, tech]);
 
-  const toggleMember = (member: User) =>
-    setSelectedMembers(prev => prev.find(m => m.id === member.id) ? prev.filter(m => m.id !== member.id) : [...prev, member]);
+  const addMember = (member: User) => {
+    if (member.id === user?.id) return;
+    setSelectedMembers(prev =>
+      prev.some(m => m.id === member.id) ? prev : [...prev, member]
+    );
+  };
+
+  const removeMember = (memberId: string) => {
+    if (memberId === user?.id) return;
+    setSelectedMembers(prev => prev.filter(m => m.id !== memberId));
+  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -140,18 +150,14 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ onClose }) => {
               </div>
             </div>
             <div className="form-group">
-              <label>Team Members</label>
-              <div className="member-picker">
-                {users.map(member => (
-                  <button key={member.id} type="button"
-                    className={`member-pick-btn ${selectedMembers.find(m => m.id === member.id) ? 'selected' : ''}`}
-                    onClick={() => toggleMember(member)}>
-                    <span className="pick-avatar">{member.name.charAt(0)}</span>
-                    <span>{member.name}</span>
-                    {selectedMembers.find(m => m.id === member.id) && <span className="pick-check">✓</span>}
-                  </button>
-                ))}
-              </div>
+              <label>{strings.modal.membersLabel}</label>
+              <MemberInvitePicker
+                users={users}
+                selected={selectedMembers}
+                ownerId={user?.id}
+                onAdd={addMember}
+                onRemove={removeMember}
+              />
             </div>
             <div className="form-row">
               <div className="form-group">

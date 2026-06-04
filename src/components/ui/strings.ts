@@ -159,6 +159,10 @@ const strings = {
     descriptionPlaceholder: "Describe your project...",
     repositoryPlaceholder: "https://github.com/...",
     demoPlaceholder: "https://your-demo.com",
+    membersLabel: "Team members",
+    memberSearchPlaceholder: "Search by name or student ID…",
+    noMembersFound: "No users match your search",
+    memberOwner: "Owner",
   },
   admin: {
     title: "User management",

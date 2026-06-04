@@ -1,3 +1,30 @@
+/* Nested inside .form-group: outer wrap owns the border, not the <input> */
+.form-group .user-search {
+  width: 100%;
+}
+
+.form-group .user-search-input-wrap {
+  border-radius: 6px;
+}
+
+.form-group .user-search-input {
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  outline: none;
+  padding: 0.5rem 0.4rem;
+  width: auto;
+  flex: 1;
+  min-width: 0;
+  font-size: 0.82rem;
+}
+
+.form-group .user-search-input:focus {
+  border: none;
+  outline: none;
+}
+
 .user-search { position: relative; width: 100%; }
 
 .user-search-input-wrap {

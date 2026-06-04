@@ -1,0 +1,105 @@
+.member-invite-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.member-invite-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.member-invite-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  max-width: 100%;
+  padding: 0.2rem 0.45rem 0.2rem 0.3rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 0.78rem;
+  line-height: 1.2;
+}
+
+.member-invite-chip-avatar {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.6rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.member-invite-chip-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.member-invite-chip-sid {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  font-family: ui-monospace, monospace;
+}
+
+.member-invite-chip-badge {
+  font-size: 0.62rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--text-muted);
+  padding-right: 0.15rem;
+}
+
+.member-invite-chip-remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.member-invite-chip-remove:hover {
+  background: var(--border);
+  color: var(--text);
+}
+
+.member-invite-suggestion {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.55rem 0.65rem 0.55rem 0.75rem;
+  border: none;
+  border-top: 1px solid var(--border);
+  background: none;
+  cursor: pointer;
+  text-align: left;
+  font-family: var(--font);
+  transition: background 0.1s;
+}
+
+.member-invite-suggestion:first-child {
+  border-top: none;
+}
+
+.member-invite-suggestion:hover {
+  background: var(--surface);
+}
+
+.member-invite-picker .user-search {
+  position: relative;
+}

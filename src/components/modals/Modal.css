@@ -20,11 +20,6 @@
 .tech-pick-btn:hover { border-color: var(--text-muted); color: var(--text); }
 .tech-pick-btn.selected { font-weight: 600; }
 
-.member-picker { display: flex; flex-direction: column; gap: 0.3rem; }
-.member-pick-btn { display: flex; align-items: center; gap: 0.45rem; padding: 0.4rem 0.6rem; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; transition: border-color 0.1s; font-size: 0.82rem; color: var(--text-muted); font-family: var(--font); text-align: left; width: 100%; }
-.member-pick-btn:hover { border-color: var(--text-muted); color: var(--text); }
-.member-pick-btn.selected { border-color: var(--accent); color: var(--text); }
-
 .pick-avatar { width: 20px; height: 20px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 0.6rem; font-weight: 600; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .pick-check { margin-left: auto; font-size: 0.7rem; color: var(--accent); }
 

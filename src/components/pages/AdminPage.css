@@ -109,7 +109,13 @@
   color: inherit;
 }
 
-.admin-user-link:hover span { color: var(--accent); }
+.admin-user-link:hover span {
+  color: var(--accent);
+}
+
+.admin-user-link:hover {
+  box-shadow: none;
+}
 
 .admin-avatar {
   width: 28px;

@@ -203,6 +203,7 @@
 
 .task-view-assignee:hover {
   color: var(--accent);
+  box-shadow: none;
 }
 
 .task-view-assignee-avatar {

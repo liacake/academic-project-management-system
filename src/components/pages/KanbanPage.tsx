@@ -183,6 +183,21 @@ const KanbanPage: React.FC = () => {
   const canDragTask = (task: Task, p: Project) =>
     canModifyProject(user, p) || canMoveAssignedTask(user, task, p);
 
+  const endDrag = () => {
+    if (draggingTask) setDidDrag(true);
+    setDraggingTask(null);
+    setDragOverColumn(null);
+  };
+
+  const startDrag = (task: Task, taskProject: Project, e: React.DragEvent) => {
+    if (!canDragTask(task, taskProject)) {
+      e.preventDefault();
+      return;
+    }
+    e.stopPropagation();
+    setDraggingTask(task);
+  };
+
   const handleDrop = (status: TaskStatus) => {
     if (!draggingTask) return;
     const taskProject = projects.find(p => p.id === draggingTask.projectId);
@@ -190,9 +205,7 @@ const KanbanPage: React.FC = () => {
     if (draggingTask.status !== status) {
       updateTaskStatus(taskProject.id, draggingTask.id, status);
     }
-    setDraggingTask(null);
-    setDragOverColumn(null);
-    setDidDrag(true);
+    endDrag();
   };
 
   const openTask = (task: Task) => {
@@ -289,7 +302,11 @@ const KanbanPage: React.FC = () => {
                 <div
                   key={col.id}
                   className={`kanban-column ${dragOverColumn === col.id ? 'kanban-column--over' : ''}`}
-                  onDragOver={e => { e.preventDefault(); setDragOverColumn(col.id); }}
+                  onDragOver={e => {
+                    if (!draggingTask) return;
+                    e.preventDefault();
+                    setDragOverColumn(col.id);
+                  }}
                   onDragLeave={() => setDragOverColumn(null)}
                   onDrop={() => handleDrop(col.id)}
                 >
@@ -334,14 +351,7 @@ const KanbanPage: React.FC = () => {
                       return (
                         <div
                           key={task.id}
-                          className={`kanban-card kanban-card--clickable ${isSelected ? 'kanban-card--selected' : ''} ${draggingTask?.id === task.id ? 'kanban-card--dragging' : ''}`}
-                          draggable={cardCanDrag}
-                          onDragStart={() => { if (cardCanDrag) setDraggingTask(task); }}
-                          onDragEnd={() => {
-                            if (draggingTask) setDidDrag(true);
-                            setDraggingTask(null);
-                            setDragOverColumn(null);
-                          }}
+                          className={`kanban-card kanban-card--clickable ${cardCanDrag ? 'kanban-card--draggable' : ''} ${isSelected ? 'kanban-card--selected' : ''} ${draggingTask?.id === task.id ? 'kanban-card--dragging' : ''}`}
                           onClick={() => openTask(task)}
                           role="button"
                           tabIndex={0}
@@ -387,7 +397,21 @@ const KanbanPage: React.FC = () => {
                               )
                             )}
                             {isAssignedView && <span className="kanban-card-you">{strings.kanban.assignedToYou}</span>}
-                            {cardCanDrag && <GripVertical size={13} className="kanban-drag-handle" />}
+                            {cardCanDrag && (
+                              <span
+                                className="kanban-drag-handle"
+                                draggable
+                                role="button"
+                                tabIndex={-1}
+                                aria-label={strings.kanban.dragTask}
+                                onDragStart={e => startDrag(task, taskProject, e)}
+                                onDragEnd={endDrag}
+                                onClick={e => e.stopPropagation()}
+                                onMouseDown={e => e.stopPropagation()}
+                              >
+                                <GripVertical size={13} />
+                              </span>
+                            )}
                           </div>
                         </div>
                       );

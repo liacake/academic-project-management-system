@@ -165,6 +165,7 @@ const strings = {
     taskPriority: "Priority",
     saveTask: "Save task",
     dropHere: "Drop tasks here",
+    dragTask: "Drag to move task",
     addTask: "Add",
     taskTitlePlaceholder: "Task title…",
     deleteTask: "Delete task",

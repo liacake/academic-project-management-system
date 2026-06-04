@@ -11,7 +11,14 @@ interface UserLinkProps {
 }
 
 const UserLink: React.FC<UserLinkProps> = ({ userId, children, className = '', title, onClick }) => (
-  <Link to={profilePath(userId)} className={`user-link ${className}`.trim()} title={title} onClick={onClick}>
+  <Link
+    to={profilePath(userId)}
+    className={`user-link ${className}`.trim()}
+    title={title}
+    onClick={onClick}
+    draggable={false}
+    onDragStart={e => e.preventDefault()}
+  >
     {children}
   </Link>
 );

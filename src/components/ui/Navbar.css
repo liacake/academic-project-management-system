@@ -82,7 +82,11 @@
   display: flex; align-items: center; justify-content: center;
 }
 
-.user-info .user-link:hover { color: var(--accent); }
+.user-info .user-link:hover {
+  color: var(--accent);
+  box-shadow: none;
+  font-weight: 600;
+}
 
 .user-info { display: none; flex-direction: column; line-height: 1.15; }
 @media (min-width: 768px) { .user-info { display: flex; } }

@@ -1,21 +1,5 @@
--- Signup domain allowlist for the before-user-created auth hook.
--- Run in Supabase Dashboard → SQL Editor, then enable the hook:
--- Authentication → Hooks → Before user created → public.hook_restrict_signup_by_email_domain
-
-do $$ begin
-  create type signup_email_domain_type as enum ('allow', 'deny');
-exception
-  when duplicate_object then null;
-end $$;
-
-create table if not exists public.signup_email_domains (
-  id serial primary key,
-  domain text not null,
-  type signup_email_domain_type not null,
-  reason text default null,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-);
+-- Fix 500 on signup: hook used lower($1) on the jsonb event instead of the email domain.
+-- Run in Supabase SQL Editor, then retry signup with an @esg.ipsantarem.pt address.
 
 create unique index if not exists signup_email_domains_domain_lower_key
   on public.signup_email_domains (lower(domain));
@@ -67,7 +51,6 @@ begin
     );
   end if;
 
-  -- Allowlist mode: no allow match → reject
   return jsonb_build_object(
     'error', jsonb_build_object(
       'message', 'Signups from this email domain are not allowed.',

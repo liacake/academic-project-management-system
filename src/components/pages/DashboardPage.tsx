@@ -1,7 +1,8 @@
 import { useNavigate } from 'react-router-dom';
-import { FolderOpen, Play, CheckCircle, ListTodo, ArrowRight } from 'lucide-react';
+import { FolderOpen, Play, Users, ListTodo, ArrowRight } from 'lucide-react';
 import { useProjects } from '../../context/ProjectContext';
 import { useAuth } from '../../context/AuthContext';
+import { useTeam } from '../../context/TeamContext';
 import { canCreateProjects, canViewAllProjects } from '../../lib/permissions';
 import { countAssignedOpenTasks } from '../../lib/userTasks';
 import ProjectCard from '../ui/ProjectCard';
@@ -9,15 +10,18 @@ import Badge from '../ui/Badge';
 import strings from '../ui/strings';
 import './DashboardPage.css';
 
+const DASHBOARD_RECENT_PROJECTS = 3;
+
 const DashboardPage: React.FC = () => {
   const { projects } = useProjects();
-  const { user } = useAuth();
+  const { users } = useTeam();
+  const { user, hasRole } = useAuth();
   const navigate = useNavigate();
   const showCreate = canCreateProjects(user?.role);
   const overviewMode = canViewAllProjects(user?.role);
 
-  const activeProjects    = projects.filter(p => p.status === 'active');
-  const completedProjects = projects.filter(p => p.status === 'completed');
+  const activeProjects = projects.filter(p => p.status === 'active');
+  const studentCount = users.filter(u => u.role === 'student').length;
   const myOpenTasks = user ? countAssignedOpenTasks(projects, user.id) : 0;
   const allTasks   = projects.flatMap(p => p.tasks);
 
@@ -30,7 +34,7 @@ const DashboardPage: React.FC = () => {
 
   const recentProjects = [...projects]
     .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
-    .slice(0, 4);
+    .slice(0, DASHBOARD_RECENT_PROJECTS);
 
   const techFrequency = projects.flatMap(p => p.technologies).reduce((acc, tech) => {
     acc[tech.name] = { count: (acc[tech.name]?.count || 0) + 1, tech };
@@ -44,7 +48,7 @@ const DashboardPage: React.FC = () => {
     value: number;
     Icon: typeof FolderOpen;
     cls: string;
-    onClick: () => void;
+    onClick?: () => void;
   }[] = [
     {
       label: strings.dashboard.totalProjects,
@@ -61,11 +65,11 @@ const DashboardPage: React.FC = () => {
       onClick: () => navigate('/projects?status=active'),
     },
     {
-      label: strings.dashboard.completedProjects,
-      value: completedProjects.length,
-      Icon: CheckCircle,
+      label: strings.dashboard.totalStudents,
+      value: studentCount,
+      Icon: Users,
       cls: 'purple',
-      onClick: () => navigate('/projects?status=completed'),
+      onClick: hasRole('admin') ? () => navigate('/admin') : undefined,
     },
     {
       label: strings.dashboard.myOpenTasks,
@@ -95,20 +99,30 @@ const DashboardPage: React.FC = () => {
       </div>
 
       <div className="stats-grid">
-        {stats.map(({ label, value, Icon, cls, onClick }) => (
-          <button
-            key={label}
-            type="button"
-            className="stat-card stat-card--clickable"
-            onClick={onClick}
-          >
-            <div className={`stat-icon stat-icon--${cls}`}><Icon size={18} /></div>
-            <div className="stat-content">
-              <div className="stat-value">{value}</div>
-              <div className="stat-label">{label}</div>
+        {stats.map(({ label, value, Icon, cls, onClick }) =>
+          onClick ? (
+            <button
+              key={label}
+              type="button"
+              className="stat-card stat-card--clickable"
+              onClick={onClick}
+            >
+              <div className={`stat-icon stat-icon--${cls}`}><Icon size={18} /></div>
+              <div className="stat-content">
+                <div className="stat-value">{value}</div>
+                <div className="stat-label">{label}</div>
+              </div>
+            </button>
+          ) : (
+            <div key={label} className="stat-card">
+              <div className={`stat-icon stat-icon--${cls}`}><Icon size={18} /></div>
+              <div className="stat-content">
+                <div className="stat-value">{value}</div>
+                <div className="stat-label">{label}</div>
+              </div>
             </div>
-          </button>
-        ))}
+          )
+        )}
       </div>
 
       <div className="dashboard-grid">

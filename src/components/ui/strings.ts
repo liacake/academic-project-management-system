@@ -36,7 +36,7 @@ const strings = {
     subtitleOverview: "Overview of {n} projects you can access",
     totalProjects: "Total Projects",
     activeProjects: "Active Projects",
-    completedProjects: "Completed Projects",
+    totalStudents: "Students",
     myOpenTasks: "My open tasks",
     recentProjects: "Recent Projects",
     tasksByStatus: "Tasks by Status",

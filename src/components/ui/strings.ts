@@ -216,6 +216,11 @@ const strings = {
     hint: "New accounts are created via sign-up or the Supabase dashboard. Role changes take effect on the user’s next request.",
     roleUpdateError:
       "Failed to update role. Ensure the admin RLS policy is applied.",
+    colActions: "Actions",
+    deleteAccount: "Delete account",
+    confirmDeleteAccount: "Permanently delete {name} ({email})? This cannot be undone.",
+    deleteAccountError:
+      "Failed to delete account. Run supabase/admin_delete_user.sql in the SQL Editor.",
   },
   technologiesAdmin: {
     title: "Technology catalogue",

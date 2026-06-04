@@ -172,6 +172,41 @@
   margin: 0;
 }
 
+.admin-actions-cell {
+  white-space: nowrap;
+}
+
+.admin-actions-muted {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.admin-delete-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.55rem;
+  border: 1px solid #fecaca;
+  border-radius: 5px;
+  background: #fef2f2;
+  color: var(--danger);
+  font-size: 0.75rem;
+  font-family: var(--font);
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.1s, background 0.1s;
+}
+
+.admin-delete-btn:hover:not(:disabled) {
+  border-color: var(--danger);
+  background: #fee2e2;
+}
+
+.admin-delete-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 @media (max-width: 720px) {
   .admin-table th:nth-child(3),
   .admin-table td:nth-child(3) { display: none; }

@@ -8,12 +8,14 @@ interface TeamContextType {
   users: User[];
   loading: boolean;
   updateUserRole: (userId: string, role: Role) => Promise<{ success: boolean; error?: string }>;
+  deleteUserAccount: (userId: string) => Promise<{ success: boolean; error?: string }>;
   refreshUsers: () => Promise<void>;
 }
 
 const TeamContext = createContext<TeamContextType>({
   users: [], loading: false,
   updateUserRole: async () => ({ success: false }),
+  deleteUserAccount: async () => ({ success: false }),
   refreshUsers: async () => {},
 });
 
@@ -55,8 +57,15 @@ export const TeamProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return { success: true };
   };
 
+  const deleteUserAccount = async (userId: string): Promise<{ success: boolean; error?: string }> => {
+    const { error } = await supabase.rpc('admin_delete_user', { target_id: userId });
+    if (error) return { success: false, error: error.message };
+    setUsers(prev => prev.filter(u => u.id !== userId));
+    return { success: true };
+  };
+
   return (
-    <TeamContext.Provider value={{ users, loading, updateUserRole, refreshUsers }}>
+    <TeamContext.Provider value={{ users, loading, updateUserRole, deleteUserAccount, refreshUsers }}>
       {children}
     </TeamContext.Provider>
   );

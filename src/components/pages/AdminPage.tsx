@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react';
-import { Search, X } from 'lucide-react';
+import { Search, X, Trash2 } from 'lucide-react';
 import { useTeam } from '../../context/TeamContext';
 import { useAuth } from '../../context/AuthContext';
-import { Role } from '../../types';
+import { canDeleteUserAccount } from '../../lib/permissions';
+import { Role, User } from '../../types';
 import Badge from '../ui/Badge';
 import UserLink from '../ui/UserLink';
 import strings from '../ui/strings';
@@ -18,11 +19,12 @@ const roleVariant: Record<Role, 'default' | 'success' | 'warning' | 'danger' | '
 };
 
 const AdminPage: React.FC = () => {
-  const { users, loading, updateUserRole } = useTeam();
+  const { users, loading, updateUserRole, deleteUserAccount } = useTeam();
   const { user: currentUser } = useAuth();
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState<Role | 'all'>('all');
   const [savingId, setSavingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [error, setError] = useState('');
 
   const filtered = useMemo(() => {
@@ -43,6 +45,18 @@ const AdminPage: React.FC = () => {
     const result = await updateUserRole(userId, role);
     setSavingId(null);
     if (!result.success) setError(result.error ?? strings.admin.roleUpdateError);
+  };
+
+  const handleDeleteAccount = async (target: User) => {
+    const msg = strings.admin.confirmDeleteAccount
+      .replace('{name}', target.name)
+      .replace('{email}', target.email);
+    if (!window.confirm(msg)) return;
+    setDeletingId(target.id);
+    setError('');
+    const result = await deleteUserAccount(target.id);
+    setDeletingId(null);
+    if (!result.success) setError(result.error ?? strings.admin.deleteAccountError);
   };
 
   if (loading) {
@@ -96,12 +110,13 @@ const AdminPage: React.FC = () => {
               <th>{strings.admin.colEmail}</th>
               <th>{strings.admin.colStudentId}</th>
               <th>{strings.admin.colRole}</th>
+              <th>{strings.admin.colActions}</th>
             </tr>
           </thead>
           <tbody>
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={4} className="admin-empty">{strings.admin.noUsers}</td>
+                <td colSpan={5} className="admin-empty">{strings.admin.noUsers}</td>
               </tr>
             ) : (
               filtered.map(u => (
@@ -134,6 +149,22 @@ const AdminPage: React.FC = () => {
                         ))}
                       </select>
                     </div>
+                  </td>
+                  <td className="admin-actions-cell">
+                    {canDeleteUserAccount(currentUser, u) ? (
+                      <button
+                        type="button"
+                        className="admin-delete-btn"
+                        title={strings.admin.deleteAccount}
+                        disabled={deletingId === u.id || savingId === u.id}
+                        onClick={() => handleDeleteAccount(u)}
+                      >
+                        <Trash2 size={14} />
+                        <span>{deletingId === u.id ? '…' : strings.admin.deleteAccount}</span>
+                      </button>
+                    ) : (
+                      <span className="admin-actions-muted">—</span>
+                    )}
                   </td>
                 </tr>
               ))

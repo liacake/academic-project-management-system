@@ -63,3 +63,11 @@ export function canChangeAssignedTaskStatus(
 ): boolean {
   return canMoveAssignedTask(user, task, project);
 }
+
+/** Admins may delete student/coordinator/guest accounts, not admins or themselves. */
+export function canDeleteUserAccount(actor: User | null | undefined, target: User): boolean {
+  if (!actor || actor.role !== 'admin') return false;
+  if (actor.id === target.id) return false;
+  if (target.role === 'admin') return false;
+  return true;
+}

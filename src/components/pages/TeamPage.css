@@ -277,6 +277,11 @@
   color: inherit;
 }
 
+.team-member-link.user-link:hover {
+  box-shadow: none;
+  color: inherit;
+}
+
 .team-member-link:hover .team-member-name {
   color: var(--accent);
 }

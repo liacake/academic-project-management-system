@@ -1,19 +1,25 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Search, X, SlidersHorizontal } from 'lucide-react';
+import { Search, X } from 'lucide-react';
 import { useProjects } from '../../context/ProjectContext';
 import { useAuth } from '../../context/AuthContext';
 import { canCreateProjects, canViewAllProjects } from '../../lib/permissions';
 import {
+  EMPTY_PROJECT_FILTERS,
   PROJECTS_PAGE_SIZE,
+  applyProjectListFilters,
+  buildProjectFilterOptions,
   filterProjectsForRole,
   showMyProjectsFilter,
+  sortProjects,
 } from '../../lib/projectFilters';
 import { ProjectStatus } from '../../types';
 import ProjectCard from '../ui/ProjectCard';
+import ProjectsFilterPanel from '../projects/ProjectsFilterPanel';
 import strings from '../ui/strings';
 import NewProjectModal from '../modals/NewProjectModal';
 import './ProjectsPage.css';
+import '../projects/ProjectsFilterPanel.css';
 
 const ProjectsPage: React.FC = () => {
   const { projects } = useProjects();
@@ -28,48 +34,37 @@ const ProjectsPage: React.FC = () => {
   const [sortBy, setSortBy] = useState<'updated' | 'created' | 'title'>('updated');
   const [myProjectsOnly, setMyProjectsOnly] = useState(true);
   const [visibleCount, setVisibleCount] = useState(PROJECTS_PAGE_SIZE);
+  const [filters, setFilters] = useState({ ...EMPTY_PROJECT_FILTERS });
 
-  const statusFilter = useMemo((): ProjectStatus | 'all' => {
+  const statusFromUrl = useMemo((): ProjectStatus | 'all' => {
     const param = searchParams.get('status');
     if (param && param in strings.projects.status) return param as ProjectStatus;
     return 'all';
   }, [searchParams]);
 
-  const setStatusFilter = (value: ProjectStatus | 'all') => {
-    const next = new URLSearchParams(searchParams);
-    if (value === 'all') next.delete('status');
-    else next.set('status', value);
-    setSearchParams(next, { replace: true });
-  };
+  const activeFilters = useMemo(
+    () => ({ ...filters, search, status: statusFromUrl }),
+    [filters, search, statusFromUrl]
+  );
 
   const scopeFiltered = useMemo(
     () => filterProjectsForRole(projects, user, showScopeFilter && myProjectsOnly),
     [projects, user, showScopeFilter, myProjectsOnly]
   );
 
+  const filterOptions = useMemo(
+    () => buildProjectFilterOptions(scopeFiltered),
+    [scopeFiltered]
+  );
+
   const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    return scopeFiltered
-      .filter(p => {
-        const matchSearch = !q ||
-          p.title.toLowerCase().includes(q) ||
-          p.description.toLowerCase().includes(q) ||
-          p.technologies.some(t => t.name.toLowerCase().includes(q));
-        const matchStatus = statusFilter === 'all' || p.status === statusFilter;
-        return matchSearch && matchStatus;
-      })
-      .sort((a, b) => {
-        if (sortBy === 'title') return a.title.localeCompare(b.title);
-        if (sortBy === 'created') {
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-        }
-        return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
-      });
-  }, [scopeFiltered, search, statusFilter, sortBy]);
+    const list = applyProjectListFilters(scopeFiltered, activeFilters);
+    return sortProjects(list, sortBy);
+  }, [scopeFiltered, activeFilters, sortBy]);
 
   useEffect(() => {
     setVisibleCount(PROJECTS_PAGE_SIZE);
-  }, [search, statusFilter, sortBy, myProjectsOnly]);
+  }, [activeFilters, sortBy, myProjectsOnly]);
 
   const visibleProjects = filtered.slice(0, visibleCount);
   const remaining = filtered.length - visibleProjects.length;
@@ -79,20 +74,36 @@ const ProjectsPage: React.FC = () => {
     ? strings.projects.filterMyCoordinate
     : strings.projects.filterMyMember;
 
-  const subtitle = overviewMode && !showScopeFilter
-    ? `${strings.projects.subtitleOverview} · ${strings.projects.showingCount
-        .replace('{shown}', String(visibleProjects.length))
-        .replace('{total}', String(filtered.length))}`
-    : strings.projects.showingCount
-        .replace('{shown}', String(visibleProjects.length))
-        .replace('{total}', String(filtered.length));
+  const subtitle = strings.projects.showingCount
+    .replace('{shown}', String(visibleProjects.length))
+    .replace('{total}', String(filtered.length));
+
+  const patchFilters = (patch: Partial<typeof filters>) => {
+    setFilters(prev => ({ ...prev, ...patch }));
+    if (patch.status !== undefined) {
+      const next = new URLSearchParams(searchParams);
+      if (patch.status === 'all') next.delete('status');
+      else next.set('status', patch.status);
+      setSearchParams(next, { replace: true });
+    }
+  };
+
+  const clearAllFilters = () => {
+    setFilters({ ...EMPTY_PROJECT_FILTERS });
+    setSearch('');
+    const next = new URLSearchParams(searchParams);
+    next.delete('status');
+    setSearchParams(next, { replace: true });
+  };
 
   return (
     <div className="projects-page">
       <div className="page-header">
         <div>
           <h1 className="page-title">{strings.projects.title}</h1>
-          <p className="page-subtitle">{subtitle}</p>
+          <p className="page-subtitle">
+            {overviewMode ? `${strings.projects.subtitleOverview} · ${subtitle}` : subtitle}
+          </p>
         </div>
         {showCreate && (
           <button className="btn-primary" onClick={() => setShowModal(true)}>
@@ -101,7 +112,7 @@ const ProjectsPage: React.FC = () => {
         )}
       </div>
 
-      <div className="projects-toolbar">
+      <div className="projects-search-row">
         <div className="search-wrapper">
           <Search size={15} className="search-icon" />
           <input
@@ -117,40 +128,26 @@ const ProjectsPage: React.FC = () => {
             </button>
           )}
         </div>
-
-        <div className="toolbar-filters">
-          {showScopeFilter && (
-            <label className="projects-scope-filter">
-              <input
-                type="checkbox"
-                checked={myProjectsOnly}
-                onChange={e => setMyProjectsOnly(e.target.checked)}
-              />
-              <span>{scopeFilterLabel}</span>
-            </label>
-          )}
-          <SlidersHorizontal size={15} className="filter-icon" />
-          <select
-            className="filter-select"
-            value={statusFilter}
-            onChange={e => setStatusFilter(e.target.value as ProjectStatus | 'all')}
-          >
-            <option value="all">{strings.projects.allStatuses}</option>
-            {Object.entries(strings.projects.status).map(([key, label]) => (
-              <option key={key} value={key}>{label}</option>
-            ))}
-          </select>
-          <select
-            className="filter-select"
-            value={sortBy}
-            onChange={e => setSortBy(e.target.value as typeof sortBy)}
-          >
-            <option value="updated">Recently Updated</option>
-            <option value="created">Recently Created</option>
-            <option value="title">Title A–Z</option>
-          </select>
-        </div>
+        {showScopeFilter && (
+          <label className="projects-scope-filter">
+            <input
+              type="checkbox"
+              checked={myProjectsOnly}
+              onChange={e => setMyProjectsOnly(e.target.checked)}
+            />
+            <span>{scopeFilterLabel}</span>
+          </label>
+        )}
       </div>
+
+      <ProjectsFilterPanel
+        filters={activeFilters}
+        options={filterOptions}
+        sortBy={sortBy}
+        onSortChange={setSortBy}
+        onChange={patchFilters}
+        onClear={clearAllFilters}
+      />
 
       {filtered.length === 0 ? (
         <div className="empty-state">
@@ -179,7 +176,7 @@ const ProjectsPage: React.FC = () => {
             <div className="projects-show-more">
               <button
                 type="button"
-                className="btn-secondary projects-show-more-btn"
+                className="projects-show-more-btn"
                 onClick={() => setVisibleCount(c => c + PROJECTS_PAGE_SIZE)}
               >
                 {strings.projects.showMoreCount.replace(

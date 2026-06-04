@@ -27,6 +27,8 @@ const strings = {
       "Only signups from the esg.ipsantarem.pt domain are allowed.",
     loginButton: "Sign in",
     loggingIn: "Signing in...",
+    studentIdHint:
+      "Your student ID will be based on your email (e.g. {id}). If that ID is already taken, a number is added automatically.",
   },
   dashboard: {
     title: "Dashboard",

@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ChevronLeft, ExternalLink, Info } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
+import { visibleStudentId } from '../../lib/profileDisplay';
 import { Role, User } from '../../types';
 import Badge from '../ui/Badge';
 import strings from '../ui/strings';
@@ -38,12 +39,13 @@ const ProfilePage: React.FC = () => {
         setProfile(null);
         setNotFound(true);
       } else {
+        const role = data.role as Role;
         setProfile({
           id: data.id,
           name: data.name,
           email: data.email,
-          role: data.role as Role,
-          studentId: data.student_id ?? undefined,
+          role,
+          studentId: visibleStudentId(role, data.student_id),
           avatar: data.avatar ?? undefined,
         });
       }
@@ -105,10 +107,12 @@ const ProfilePage: React.FC = () => {
       <section className="profile-card">
         <h2 className="profile-section-title">{strings.profile.details}</h2>
         <dl className="profile-details">
-          <div className="profile-detail-row">
-            <dt>{strings.profile.studentId}</dt>
-            <dd>{profile.studentId ?? '—'}</dd>
-          </div>
+          {profile.role === 'student' && (
+            <div className="profile-detail-row">
+              <dt>{strings.profile.studentId}</dt>
+              <dd>{profile.studentId ?? '—'}</dd>
+            </div>
+          )}
           <div className="profile-detail-row">
             <dt>{strings.profile.role}</dt>
             <dd>{strings.roles[profile.role]}</dd>

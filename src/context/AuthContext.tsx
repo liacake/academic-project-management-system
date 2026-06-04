@@ -3,6 +3,7 @@ import { Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import { formatAuthError } from '../lib/authErrors';
 import strings from '../components/ui/strings';
+import { visibleStudentId } from '../lib/profileDisplay';
 import { User, AuthState, Role } from '../types';
 
 interface AuthContextType extends AuthState {
@@ -21,10 +22,11 @@ async function fetchProfile(userId: string): Promise<User | null> {
     .eq('id', userId)
     .single();
   if (error || !data) return null;
+  const role = data.role as Role;
   return {
     id: data.id, name: data.name, email: data.email,
-    role: data.role as Role,
-    studentId: data.student_id ?? undefined,
+    role,
+    studentId: visibleStudentId(role, data.student_id),
     avatar: data.avatar ?? undefined,
   };
 }
@@ -55,11 +57,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const signup = useCallback(async (email: string, password: string, name: string): Promise<{ success: boolean; error?: string }> => {
-    // student_id is derived from the part before @ in the email
-    const studentId = email.split('@')[0];
     const { error } = await supabase.auth.signUp({
       email, password,
-      options: { data: { name, role: 'student', student_id: studentId } },
+      options: { data: { name, role: 'student' } },
     });
     if (error) return { success: false, error: formatAuthError(error.message) };
     return { success: true };

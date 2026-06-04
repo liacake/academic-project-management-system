@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
+import { visibleStudentId } from '../lib/profileDisplay';
 import { Role, User } from '../types';
 import { useAuth } from './AuthContext';
 
@@ -26,14 +27,17 @@ export const TeamProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const { data, error } = await supabase.from('profiles').select('*').order('name');
     if (!error) {
       setUsers(
-        (data ?? []).map(p => ({
-          id: p.id,
-          name: p.name,
-          email: p.email,
-          role: p.role as Role,
-          studentId: p.student_id ?? undefined,
-          avatar: p.avatar ?? undefined,
-        }))
+        (data ?? []).map(p => {
+          const role = p.role as Role;
+          return {
+            id: p.id,
+            name: p.name,
+            email: p.email,
+            role,
+            studentId: visibleStudentId(role, p.student_id),
+            avatar: p.avatar ?? undefined,
+          };
+        })
       );
     }
     setLoading(false);

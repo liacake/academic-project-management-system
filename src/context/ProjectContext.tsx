@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
+import { visibleStudentId } from '../lib/profileDisplay';
 import { Project, Task, TaskStatus, Technology, User } from '../types';
 import { useAuth } from './AuthContext';
 
@@ -31,10 +32,11 @@ function dbToTech(t: Record<string, unknown>): Technology {
 }
 
 function dbToUser(p: Record<string, unknown>): User {
+  const role = p.role as User['role'];
   return {
     id: p.id as string, name: p.name as string, email: p.email as string,
-    role: p.role as User['role'],
-    studentId: (p.student_id ?? undefined) as string | undefined,
+    role,
+    studentId: visibleStudentId(role, p.student_id as string | null | undefined),
     avatar: (p.avatar ?? undefined) as string | undefined,
   };
 }

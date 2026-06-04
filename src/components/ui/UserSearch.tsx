@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Search, X, UserRound } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { profilePath } from '../../lib/profilePaths';
+import { visibleStudentId } from '../../lib/profileDisplay';
 import { User } from '../../types';
 import strings from './strings';
 import './UserSearch.css';
@@ -39,12 +40,15 @@ const UserSearch: React.FC<UserSearchProps> = ({ placeholder = 'Search by name, 
     const { data } = await queryBuilder;
     const mapped: User[] = (data ?? [])
       .filter((u: Record<string, unknown>) => !excludeIds.includes(u.id as string))
-      .map((u: Record<string, unknown>) => ({
-        id: u.id as string, name: u.name as string, email: u.email as string,
-        role: u.role as User['role'],
-        studentId: (u.student_id ?? undefined) as string | undefined,
-        avatar: (u.avatar ?? undefined) as string | undefined,
-      }));
+      .map((u: Record<string, unknown>) => {
+        const role = u.role as User['role'];
+        return {
+          id: u.id as string, name: u.name as string, email: u.email as string,
+          role,
+          studentId: visibleStudentId(role, u.student_id as string | null | undefined),
+          avatar: (u.avatar ?? undefined) as string | undefined,
+        };
+      });
     setResults(mapped);
     setLoading(false);
   }, [excludeIds, roleFilter]);

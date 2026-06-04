@@ -89,7 +89,7 @@ const LoginPage: React.FC = () => {
 
           {mode === 'signup' && studentIdPreview && (
             <div className="login-student-id-hint">
-              Your student ID will be: <strong>{studentIdPreview}</strong>
+              {strings.auth.studentIdHint.replace('{id}', studentIdPreview)}
             </div>
           )}
 

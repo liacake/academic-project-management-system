@@ -104,6 +104,13 @@ const AdminPage: React.FC = () => {
 
       <div className="admin-table-wrap">
         <table className="admin-table">
+          <colgroup>
+            <col className="admin-col-name" />
+            <col className="admin-col-email" />
+            <col className="admin-col-sid" />
+            <col className="admin-col-role" />
+            <col className="admin-col-actions" />
+          </colgroup>
           <thead>
             <tr>
               <th>{strings.admin.colName}</th>
@@ -132,11 +139,15 @@ const AdminPage: React.FC = () => {
                       )}
                     </div>
                   </td>
-                  <td className="admin-email">{u.email}</td>
-                  <td className="admin-mono">{u.studentId ?? '—'}</td>
-                  <td>
+                  <td className="admin-email">
+                    <span className="admin-cell-clip" title={u.email}>{u.email}</span>
+                  </td>
+                  <td className="admin-mono admin-sid-cell">{u.studentId ?? '—'}</td>
+                  <td className="admin-role-td">
                     <div className="admin-role-cell">
-                      <Badge label={strings.roles[u.role]} variant={roleVariant[u.role]} size="md" />
+                      <span className="admin-role-badge-wrap">
+                        <Badge label={strings.roles[u.role]} variant={roleVariant[u.role]} size="md" />
+                      </span>
                       <select
                         className="admin-role-select"
                         value={u.role}

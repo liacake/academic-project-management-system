@@ -275,6 +275,10 @@ const strings = {
       "You can view this team but only the owner, coordinator, or members (when no coordinator is assigned) can manage it.",
     emptyTeam: "No team members to display.",
     loading: "Loading team…",
+    colMember: "Member",
+    colProjectRole: "Project role",
+    colRole: "Role",
+    colStudentId: "Student ID",
   },
   browse: {
     title: "Academic Projects",

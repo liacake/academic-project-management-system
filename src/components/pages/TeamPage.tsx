@@ -289,6 +289,14 @@ const TeamPage: React.FC = () => {
           )}
 
           <div className="team-member-list">
+            <div className="team-member-header" role="row">
+              <span className="team-col-label team-col-label--member">{strings.team.colMember}</span>
+              <span className="team-col-label team-col-label--icon" aria-hidden />
+              <span className="team-col-label team-col-label--project">{strings.team.colProjectRole}</span>
+              <span className="team-col-label team-col-label--system">{strings.team.colRole}</span>
+              <span className="team-col-label team-col-label--sid">{strings.team.colStudentId}</span>
+              <span className="team-col-label team-col-label--action" aria-hidden />
+            </div>
             {displayMembers.map(({ user: member, label }) => {
               const isOwner = member.id === selectedProject.ownerId;
               const isCoordinator = label === strings.team.coordinator;
@@ -307,15 +315,19 @@ const TeamPage: React.FC = () => {
                     </div>
                   </UserLink>
 
-                  <div className="team-member-badges">
-                    {isCoordinator && <Crown size={14} className="team-coord-icon" aria-hidden />}
-                    {label && <span className="team-role-pill">{label}</span>}
-                    <Badge label={strings.roles[member.role]} variant={roleVariant[member.role]} size="md" />
+                  <div className="team-member-badges" role="presentation">
+                    <span className="team-col-icon" aria-hidden>
+                      {isCoordinator ? <Crown size={14} className="team-coord-icon" /> : null}
+                    </span>
+                    <span className={`team-col-project-role ${label ? '' : 'team-col-project-role--empty'}`}>
+                      {label ?? '—'}
+                    </span>
+                    <span className="team-col-system-role">
+                      <Badge label={strings.roles[member.role]} variant={roleVariant[member.role]} size="md" />
+                    </span>
                   </div>
 
-                  {member.studentId && (
-                    <span className="team-member-sid mono">{member.studentId}</span>
-                  )}
+                  <span className="team-member-sid mono">{member.studentId ?? '—'}</span>
 
                   {removable ? (
                     <button

@@ -69,9 +69,16 @@
 
 .admin-table {
   width: 100%;
+  table-layout: fixed;
   border-collapse: collapse;
   font-size: 0.85rem;
 }
+
+.admin-col-name { width: 26%; }
+.admin-col-email { width: 30%; }
+.admin-col-sid { width: 9.5rem; }
+.admin-col-role { width: 13.5rem; }
+.admin-col-actions { width: 10.5rem; }
 
 .admin-table th {
   text-align: left;
@@ -99,6 +106,14 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.admin-user-cell .admin-user-link span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .admin-user-link {
@@ -138,16 +153,57 @@
 }
 
 .admin-email { color: var(--text-muted); }
-.admin-mono { font-family: ui-monospace, monospace; font-size: 0.8rem; color: var(--text-muted); }
+
+.admin-cell-clip {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-mono {
+  font-family: ui-monospace, monospace;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.admin-sid-cell {
+  text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-role-td {
+  overflow: hidden;
+}
 
 .admin-role-cell {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.admin-role-badge-wrap {
+  width: 5.75rem;
+  flex-shrink: 0;
+  display: flex;
+  justify-content: center;
+}
+
+.admin-role-badge-wrap .badge {
+  width: 100%;
+  justify-content: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .admin-role-select {
+  flex: 1;
+  min-width: 0;
+  max-width: 7rem;
   font-size: 0.8rem;
   border: 1px solid var(--border);
   border-radius: 5px;

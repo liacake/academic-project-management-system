@@ -252,20 +252,56 @@
 
 /* ── member list (management) ──────────────────────────────────────────────── */
 .team-member-list {
+  --team-col-icon: 1.25rem;
+  --team-col-project: 5.75rem;
+  --team-col-role: 6.75rem;
+  --team-col-sid: 7.25rem;
+  --team-col-action: 28px;
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
 }
 
+.team-member-header,
 .team-member-row {
   display: grid;
-  grid-template-columns: 1fr auto auto 28px;
+  grid-template-columns:
+    minmax(0, 1fr)
+    var(--team-col-icon)
+    var(--team-col-project)
+    var(--team-col-role)
+    var(--team-col-sid)
+    var(--team-col-action);
   align-items: center;
-  gap: 0.65rem;
+  column-gap: 0.65rem;
+}
+
+.team-member-header {
+  display: none;
+  padding: 0 0.75rem 0.15rem;
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.team-col-label--member { grid-column: 1; }
+.team-col-label--icon { grid-column: 2; }
+.team-col-label--project { grid-column: 3; text-align: center; }
+.team-col-label--system { grid-column: 4; text-align: center; }
+.team-col-label--sid { grid-column: 5; text-align: right; }
+.team-col-label--action { grid-column: 6; }
+
+.team-member-row {
   padding: 0.65rem 0.75rem;
   border: 1px solid var(--border);
   border-radius: 6px;
   background: var(--surface);
+}
+
+.team-member-badges {
+  display: contents;
 }
 
 .team-member-link {
@@ -323,12 +359,11 @@
   white-space: nowrap;
 }
 
-.team-member-badges {
+.team-col-icon {
   display: flex;
   align-items: center;
-  gap: 0.35rem;
-  flex-wrap: wrap;
-  justify-content: flex-end;
+  justify-content: center;
+  width: var(--team-col-icon);
 }
 
 .team-coord-icon {
@@ -336,7 +371,8 @@
   flex-shrink: 0;
 }
 
-.team-role-pill {
+.team-col-project-role {
+  width: var(--team-col-project);
   font-size: 0.68rem;
   font-weight: 600;
   text-transform: uppercase;
@@ -345,13 +381,44 @@
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: 4px;
-  padding: 0.1rem 0.35rem;
+  padding: 0.15rem 0.35rem;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.team-col-project-role--empty {
+  color: var(--text-muted);
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0;
+  background: transparent;
+  border-color: transparent;
+}
+
+.team-col-system-role {
+  width: var(--team-col-role);
+  display: flex;
+  justify-content: center;
+}
+
+.team-col-system-role .badge {
+  width: 100%;
+  justify-content: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .team-member-sid {
+  width: var(--team-col-sid);
   font-size: 0.72rem;
   color: var(--text-muted);
-  display: none;
+  text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .team-remove-btn {
@@ -382,27 +449,53 @@
 .mono { font-family: ui-monospace, monospace; }
 
 @media (min-width: 720px) {
-  .team-member-sid { display: block; }
-  .team-member-row {
-    grid-template-columns: 1fr auto auto auto 28px;
+  .team-member-header {
+    display: grid;
   }
 }
 
-@media (max-width: 580px) {
-  .team-member-row {
-    grid-template-columns: 1fr 28px;
-    grid-template-rows: auto auto;
+@media (max-width: 719px) {
+  .team-member-list {
+    --team-col-icon: 0;
+    --team-col-project: 0;
+    --team-col-role: 0;
+    --team-col-sid: 0;
   }
 
+  .team-member-header { display: none; }
+
+  .team-member-row {
+    grid-template-columns: minmax(0, 1fr) var(--team-col-action);
+    grid-template-rows: auto auto auto;
+    row-gap: 0.4rem;
+  }
+
+  .team-member-link { grid-column: 1; grid-row: 1; }
   .team-member-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
     grid-column: 1;
-    justify-content: flex-start;
+    grid-row: 2;
+  }
+
+  .team-col-icon,
+  .team-col-project-role,
+  .team-col-system-role {
+    width: auto;
+  }
+
+  .team-member-sid {
+    grid-column: 1;
+    grid-row: 3;
+    width: auto;
+    text-align: left;
   }
 
   .team-remove-btn,
   .team-remove-spacer {
     grid-column: 2;
-    grid-row: 1 / span 2;
+    grid-row: 1 / span 3;
     align-self: center;
   }
 }

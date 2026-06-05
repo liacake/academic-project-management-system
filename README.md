@@ -2,6 +2,33 @@
 
 A React + TypeScript application for managing academic projects, backed by **Supabase**.
 
+## Demo
+Demo: [APMS Demo](https://liacake.github.io/)
+
+### Demo credentials
+Password to all demo accounts is `Demo123<3`
+**Admin account**
+```
+admin@esg.ipsantarem.pt
+```
+
+**Student accounts**
+30 student accounts:
+<1-30>demo@esg.ipsantarem.pt
+for example:
+```
+1demo@esg.ipsantarem.pt
+```
+
+**Coordinator accounts**
+10 coordinator accounts:
+<31-40>demo@esg.ipsantarem.pt
+for example:
+```
+31demo@esg.ipsantarem.pt
+```
+
+
 ---
 
 ## Quick Start
@@ -24,9 +51,7 @@ This creates all tables, RLS policies, triggers, and seeds the technologies cata
 
 ### 3. Create user accounts
 
-In the **Supabase Dashboard → Authentication → Users**, click **Add user** for each person who needs access. The `handle_new_user` trigger will automatically create their profile row.
-
-You can also set a user's role (student / coordinator / admin / guest) by editing their row in **Table Editor → profiles**.
+All operations can be done on frontend but at least one admin account must be created and have the role "admin" assigned on backend manually first.
 
 ### 4. Configure environment variables
 

@@ -7,22 +7,29 @@ Demo: [APMS Demo](https://liacake.github.io/)
 
 ### Demo credentials
 Password to all demo accounts is `Demo123<3`
+
 **Admin account**
 ```
 admin@esg.ipsantarem.pt
 ```
 
 **Student accounts**
+
 30 student accounts:
+
 <1-30>demo@esg.ipsantarem.pt
+
 for example:
 ```
 1demo@esg.ipsantarem.pt
 ```
 
 **Coordinator accounts**
+
 10 coordinator accounts:
+
 <31-40>demo@esg.ipsantarem.pt
+
 for example:
 ```
 31demo@esg.ipsantarem.pt

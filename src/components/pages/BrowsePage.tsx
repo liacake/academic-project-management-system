@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Search, X } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import Badge from '../ui/Badge';
+import ThemeToggle from '../ui/ThemeToggle';
 import strings from '../ui/strings';
 import './BrowsePage.css';
 
@@ -75,7 +76,10 @@ const BrowsePage: React.FC = () => {
             <p className="browse-subtitle">{strings.browse.subtitle}</p>
           </div>
         </div>
-        <button className="btn-primary" onClick={() => navigate('/login')}>{strings.browse.signInCta}</button>
+        <div className="browse-header-actions">
+          <ThemeToggle />
+          <button className="btn-primary" onClick={() => navigate('/login')}>{strings.browse.signInCta}</button>
+        </div>
       </div>
 
       <div className="browse-search-wrap">

@@ -1,6 +1,8 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
-:root {
+:root,
+[data-theme='light'] {
+  color-scheme: light;
   --font: 'Inter', system-ui, sans-serif;
   --bg: #ffffff;
   --surface: #f7f7f7;
@@ -12,22 +14,25 @@
   --danger: #dc2626;
   --success: #16a34a;
   --warning: #d97706;
+  --shadow-sm: 0 1px 4px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
-/*@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #111111;
-    --surface: #1c1c1c;
-    --border: #2a2a2a;
-    --text: #efefef;
-    --text-muted: #888888;
-    --accent: #60a5fa;
-    --accent-bg: #1a2438;
-    --danger: #f87171;
-    --success: #4ade80;
-    --warning: #fbbf24;
-  }
-}*/
+[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #111111;
+  --surface: #1a1a1a;
+  --border: #2e2e2e;
+  --text: #efefef;
+  --text-muted: #9ca3af;
+  --accent: #60a5fa;
+  --accent-bg: #1a2438;
+  --danger: #f87171;
+  --success: #4ade80;
+  --warning: #fbbf24;
+  --shadow-sm: 0 1px 4px rgba(0, 0, 0, 0.35);
+  --shadow-md: 0 2px 10px rgba(0, 0, 0, 0.45);
+}
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { font-size: 16px; -webkit-font-smoothing: antialiased; }

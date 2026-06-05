@@ -2,6 +2,12 @@ const strings = {
   appName: "APMS",
   appFullName: "Academic Project Management System",
   tagline: "Organize · Track · Showcase",
+  theme: {
+    switch: "Switch theme",
+    system: "Theme: System",
+    light: "Theme: Light",
+    dark: "Theme: Dark",
+  },
   navbar: {
     toggleMenu: "Toggle navigation menu",
     browse: "Browse",

@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ChevronLeft, Github, ExternalLink } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import Badge from '../ui/Badge';
+import ThemeToggle from '../ui/ThemeToggle';
 import strings from '../ui/strings';
 import './PublicProjectDetailPage.css';
 
@@ -118,9 +119,12 @@ const PublicProjectDetailPage: React.FC = () => {
             <span className="public-detail-tagline">{strings.tagline}</span>
           </div>
         </Link>
-        <button type="button" className="btn-primary" onClick={() => navigate('/login')}>
-          {strings.browse.signInCta}
-        </button>
+        <div className="public-detail-header-actions">
+          <ThemeToggle />
+          <button type="button" className="btn-primary" onClick={() => navigate('/login')}>
+            {strings.browse.signInCta}
+          </button>
+        </div>
       </header>
 
       <button type="button" className="public-detail-back" onClick={() => navigate('/browse')}>

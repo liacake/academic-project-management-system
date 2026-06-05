@@ -5,6 +5,7 @@ import './Navbar.css';
 import strings from './strings';
 import { useAuth } from '../../context/AuthContext';
 import UserLink from './UserLink';
+import ThemeToggle from './ThemeToggle';
 
 const Navbar: React.FC = () => {
   const [open, setOpen] = useState<boolean>(false);
@@ -70,6 +71,7 @@ const Navbar: React.FC = () => {
         </ul>
 
         <div className="navbar-actions">
+          <ThemeToggle />
           {isAuthenticated ? (
             <div className="navbar-user">
               {user && (

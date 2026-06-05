@@ -2,6 +2,7 @@ import { useState, FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { isAllowedSignupEmail } from '../../lib/authErrors';
+import ThemeToggle from '../ui/ThemeToggle';
 import strings from '../ui/strings';
 import './LoginPage.css';
 
@@ -51,6 +52,7 @@ const LoginPage: React.FC = () => {
 
   return (
     <div className="login-page">
+      <ThemeToggle className="login-theme-toggle" />
       <div className="login-card">
         <div className="login-brand">
           <div className="login-logo">A</div>

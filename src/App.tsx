@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
 import { ProjectProvider } from './context/ProjectContext';
 import { TechnologyProvider } from './context/TechnologyContext';
 import { TeamProvider } from './context/TeamContext';
@@ -62,19 +63,21 @@ const AppRoutes: React.FC = () => {
 
 function App() {
   return (
-    <BrowserRouter>
-      <AuthProvider>
-        <ProjectProvider>
-          <TechnologyProvider>
-            <TeamProvider>
-              <InviteProvider>
-                <AppRoutes />
-              </InviteProvider>
-            </TeamProvider>
-          </TechnologyProvider>
-        </ProjectProvider>
-      </AuthProvider>
-    </BrowserRouter>
+    <ThemeProvider>
+      <BrowserRouter>
+        <AuthProvider>
+          <ProjectProvider>
+            <TechnologyProvider>
+              <TeamProvider>
+                <InviteProvider>
+                  <AppRoutes />
+                </InviteProvider>
+              </TeamProvider>
+            </TechnologyProvider>
+          </ProjectProvider>
+        </AuthProvider>
+      </BrowserRouter>
+    </ThemeProvider>
   );
 }
 

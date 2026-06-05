@@ -372,10 +372,29 @@ const KanbanPage: React.FC = () => {
                             </Link>
                           )}
                           <div className="kanban-card-header">
-                            <Badge label={strings.kanban.priority[task.priority]} variant={priorityVariant[task.priority]} />
-                            {task.dueDate && (
-                              <span className="kanban-due">
-                                {new Date(task.dueDate).toLocaleDateString('en', { month: 'short', day: 'numeric' })}
+                            <div className="kanban-card-header-main">
+                              <Badge label={strings.kanban.priority[task.priority]} variant={priorityVariant[task.priority]} />
+                              {task.dueDate && (
+                                <span className="kanban-due">
+                                  {new Date(task.dueDate).toLocaleDateString('en', { month: 'short', day: 'numeric' })}
+                                </span>
+                              )}
+                            </div>
+                            {cardCanDrag && (
+                              <span
+                                className="kanban-drag-handle"
+                                draggable
+                                role="button"
+                                tabIndex={0}
+                                aria-label={strings.kanban.dragTask}
+                                title={strings.kanban.dragTask}
+                                onDragStart={e => startDrag(task, taskProject, e)}
+                                onDragEnd={endDrag}
+                                onClick={e => e.stopPropagation()}
+                                onMouseDown={e => e.stopPropagation()}
+                                onKeyDown={e => e.stopPropagation()}
+                              >
+                                <GripVertical size={16} strokeWidth={2.25} aria-hidden />
                               </span>
                             )}
                           </div>
@@ -397,21 +416,6 @@ const KanbanPage: React.FC = () => {
                               )
                             )}
                             {isAssignedView && <span className="kanban-card-you">{strings.kanban.assignedToYou}</span>}
-                            {cardCanDrag && (
-                              <span
-                                className="kanban-drag-handle"
-                                draggable
-                                role="button"
-                                tabIndex={-1}
-                                aria-label={strings.kanban.dragTask}
-                                onDragStart={e => startDrag(task, taskProject, e)}
-                                onDragEnd={endDrag}
-                                onClick={e => e.stopPropagation()}
-                                onMouseDown={e => e.stopPropagation()}
-                              >
-                                <GripVertical size={13} />
-                              </span>
-                            )}
                           </div>
                         </div>
                       );

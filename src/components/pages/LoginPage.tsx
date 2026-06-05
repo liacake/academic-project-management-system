@@ -34,11 +34,7 @@ const LoginPage: React.FC = () => {
       const result = await signup(email, password, name || studentIdPreview);
       setLoading(false);
       if (!result.success) { setError(result.error ?? 'Sign up failed.'); return; }
-      setSuccess(
-        result.needsEmailConfirmation
-          ? strings.auth.confirmEmail.replace('{email}', email.trim())
-          : strings.auth.signupSuccess
-      );
+      setSuccess(strings.auth.signupSuccess);
       setMode('login');
       setPassword(''); setConfirm(''); setName('');
       return;

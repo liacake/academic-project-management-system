@@ -23,11 +23,7 @@ const strings = {
     loginSubtitle: "Sign in to your APMS account",
     demoAccounts: "Demo accounts",
     loginError: "Invalid email or password",
-    emailNotConfirmed:
-      "Please confirm your email first. Check your inbox for the link from Supabase, then sign in.",
     signupSuccess: "Account created! You can now sign in.",
-    confirmEmail:
-      "Account created. We sent a confirmation link to {email}. Open it, then return here to sign in.",
     domainNotAllowed:
       "Only signups from the esg.ipsantarem.pt domain are allowed.",
     loginButton: "Sign in",

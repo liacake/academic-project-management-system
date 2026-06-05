@@ -8,11 +8,7 @@ import { User, AuthState, Role } from '../types';
 
 interface AuthContextType extends AuthState {
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  signup: (
-    email: string,
-    password: string,
-    name: string
-  ) => Promise<{ success: boolean; error?: string; needsEmailConfirmation?: boolean }>;
+  signup: (email: string, password: string, name: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
   hasRole: (...roles: Role[]) => boolean;
 }
@@ -60,17 +56,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return { success: true };
   }, []);
 
-  const signup = useCallback(async (
-    email: string,
-    password: string,
-    name: string
-  ): Promise<{ success: boolean; error?: string; needsEmailConfirmation?: boolean }> => {
-    const { data, error } = await supabase.auth.signUp({
+  const signup = useCallback(async (email: string, password: string, name: string): Promise<{ success: boolean; error?: string }> => {
+    const { error } = await supabase.auth.signUp({
       email, password,
       options: { data: { name, role: 'student' } },
     });
     if (error) return { success: false, error: formatAuthError(error.message) };
-    return { success: true, needsEmailConfirmation: !data.session };
+    return { success: true };
   }, []);
 
   const logout = useCallback(async () => { await supabase.auth.signOut(); }, []);

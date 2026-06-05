@@ -1,6 +1,17 @@
 import { Project, ProjectStatus, Role, Technology, User } from '../types';
 
 export const PROJECTS_PAGE_SIZE = 20;
+export const PROJECTS_TECH_PARAM = 'tech';
+
+export function parseTechnologyIdsFromSearchParams(params: URLSearchParams): string[] {
+  const raw = params.get(PROJECTS_TECH_PARAM);
+  if (!raw) return [];
+  return raw.split(',').map(id => id.trim()).filter(Boolean);
+}
+
+export function projectsPathWithTech(techId: string): string {
+  return `/projects?${PROJECTS_TECH_PARAM}=${encodeURIComponent(techId)}`;
+}
 
 export const SEMESTER_OPTIONS = ['Spring', 'Summer', 'Fall', 'Winter'] as const;
 

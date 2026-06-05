@@ -7,6 +7,8 @@ import { canCreateProjects, canViewAllProjects } from '../../lib/permissions';
 import { countAssignedOpenTasks } from '../../lib/userTasks';
 import ProjectCard from '../ui/ProjectCard';
 import Badge from '../ui/Badge';
+import TechFilterChip from '../ui/TechFilterChip';
+import { Technology } from '../../types';
 import strings from '../ui/strings';
 import './DashboardPage.css';
 
@@ -39,7 +41,7 @@ const DashboardPage: React.FC = () => {
   const techFrequency = projects.flatMap(p => p.technologies).reduce((acc, tech) => {
     acc[tech.name] = { count: (acc[tech.name]?.count || 0) + 1, tech };
     return acc;
-  }, {} as Record<string, { count: number; tech: { name: string; color: string } }>);
+  }, {} as Record<string, { count: number; tech: Technology }>);
 
   const topTechs = Object.values(techFrequency).sort((a, b) => b.count - a.count).slice(0, 8);
 
@@ -164,8 +166,10 @@ const DashboardPage: React.FC = () => {
             <h2 className="section-title">Top Technologies</h2>
             <div className="tech-list">
               {topTechs.map(({ tech, count }) => (
-                <div key={tech.name} className="tech-item">
-                  <Badge label={tech.name} color={tech.color} />
+                <div key={tech.id} className="tech-item">
+                  <TechFilterChip techId={tech.id} title={`Filter projects by ${tech.name}`}>
+                    <Badge label={tech.name} color={tech.color} />
+                  </TechFilterChip>
                   <span className="tech-count">{count} project{count !== 1 ? 's' : ''}</span>
                 </div>
               ))}

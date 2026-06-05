@@ -1,6 +1,7 @@
 import { Github, ExternalLink } from 'lucide-react';
 import { Project } from '../../types';
 import Badge from './Badge';
+import TechFilterChip from './TechFilterChip';
 import UserLink from './UserLink';
 import './ProjectCard.css';
 import { formatProjectDateRange } from '../../lib/dates';
@@ -39,7 +40,9 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onClick }) => {
 
       <div className="project-card-tech">
         {project.technologies.slice(0, 4).map(tech => (
-          <Badge key={tech.id} label={tech.name} color={tech.color} />
+          <TechFilterChip key={tech.id} techId={tech.id} title={`Filter projects by ${tech.name}`}>
+            <Badge label={tech.name} color={tech.color} />
+          </TechFilterChip>
         ))}
         {project.technologies.length > 4 && (
           <span className="tech-more">+{project.technologies.length - 4}</span>

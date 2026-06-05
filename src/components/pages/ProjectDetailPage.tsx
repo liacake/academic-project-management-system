@@ -8,6 +8,7 @@ import { canModifyProject, canDeleteProject } from '../../lib/permissions';
 import { useInvites } from '../../context/InviteContext';
 import Badge from '../ui/Badge';
 import UserLink from '../ui/UserLink';
+import TechFilterChip from '../ui/TechFilterChip';
 import UserSearch from '../ui/UserSearch';
 import { formatProjectDate, formatProjectDateRange } from '../../lib/dates';
 import strings from '../ui/strings';
@@ -157,11 +158,17 @@ const ProjectDetailPage: React.FC = () => {
             <h3 className="detail-section-title">Technologies</h3>
             <div className="tech-grid">
               {project.technologies.map(tech => (
-                <div key={tech.id} className="tech-chip" style={{ borderColor: `${tech.color}44` }}>
+                <TechFilterChip
+                  key={tech.id}
+                  techId={tech.id}
+                  className="tech-filter-chip--chip tech-chip"
+                  title={`Filter projects by ${tech.name}`}
+                  style={{ borderColor: `${tech.color}44` }}
+                >
                   <span className="tech-dot" style={{ background: tech.color }} />
                   <span className="tech-name">{tech.name}</span>
                   <span className="tech-category">{tech.category}</span>
-                </div>
+                </TechFilterChip>
               ))}
             </div>
           </div>

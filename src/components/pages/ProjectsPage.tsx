@@ -7,9 +7,11 @@ import { canCreateProjects, canViewAllProjects } from '../../lib/permissions';
 import {
   EMPTY_PROJECT_FILTERS,
   PROJECTS_PAGE_SIZE,
+  PROJECTS_TECH_PARAM,
   applyProjectListFilters,
   buildProjectFilterOptions,
   filterProjectsForRole,
+  parseTechnologyIdsFromSearchParams,
   showMyProjectsFilter,
   sortProjects,
 } from '../../lib/projectFilters';
@@ -63,6 +65,17 @@ const ProjectsPage: React.FC = () => {
   }, [scopeFiltered, activeFilters, sortBy]);
 
   useEffect(() => {
+    const techIds = parseTechnologyIdsFromSearchParams(searchParams);
+    setFilters(prev => {
+      const same =
+        prev.technologyIds.length === techIds.length &&
+        techIds.every(id => prev.technologyIds.includes(id));
+      if (same) return prev;
+      return { ...prev, technologyIds: techIds };
+    });
+  }, [searchParams]);
+
+  useEffect(() => {
     setVisibleCount(PROJECTS_PAGE_SIZE);
   }, [activeFilters, sortBy, myProjectsOnly]);
 
@@ -80,12 +93,19 @@ const ProjectsPage: React.FC = () => {
 
   const patchFilters = (patch: Partial<typeof filters>) => {
     setFilters(prev => ({ ...prev, ...patch }));
+    const next = new URLSearchParams(searchParams);
+    let changed = false;
     if (patch.status !== undefined) {
-      const next = new URLSearchParams(searchParams);
       if (patch.status === 'all') next.delete('status');
       else next.set('status', patch.status);
-      setSearchParams(next, { replace: true });
+      changed = true;
     }
+    if (patch.technologyIds !== undefined) {
+      if (patch.technologyIds.length === 0) next.delete(PROJECTS_TECH_PARAM);
+      else next.set(PROJECTS_TECH_PARAM, patch.technologyIds.join(','));
+      changed = true;
+    }
+    if (changed) setSearchParams(next, { replace: true });
   };
 
   const clearAllFilters = () => {
@@ -93,6 +113,7 @@ const ProjectsPage: React.FC = () => {
     setSearch('');
     const next = new URLSearchParams(searchParams);
     next.delete('status');
+    next.delete(PROJECTS_TECH_PARAM);
     setSearchParams(next, { replace: true });
   };
 

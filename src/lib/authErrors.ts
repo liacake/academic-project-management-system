@@ -16,8 +16,12 @@ function isEmailDomainRestrictionError(message: string): boolean {
 }
 
 export function formatAuthError(message: string): string {
+  const lower = message.toLowerCase();
   if (isEmailDomainRestrictionError(message)) {
     return strings.auth.domainNotAllowed;
+  }
+  if (lower.includes('email not confirmed') || lower.includes('email_not_confirmed')) {
+    return strings.auth.emailNotConfirmed;
   }
   return message;
 }

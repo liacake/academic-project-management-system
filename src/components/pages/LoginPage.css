@@ -52,7 +52,24 @@
 .login-tab:not(.login-tab--active):hover { background: var(--surface); }
 
 /* ── success ───────────────────────────────────────────────────────────────── */
-.login-success { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; padding: 0.55rem 0.75rem; border-radius: 6px; font-size: 0.82rem; margin-bottom: 0.5rem; }
+.login-success {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #166534;
+  padding: 0.55rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  margin-bottom: 0.75rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  .login-success {
+    background: #0d2119;
+    border-color: #1a4731;
+    color: #86efac;
+  }
+}
 
 /* ── student ID hint ───────────────────────────────────────────────────────── */
 .login-domain-hint {
